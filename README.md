@@ -32,7 +32,7 @@ The following documents describe the system requirements and software design:
 - **Software Requirements Specification (SRS):** Documents the system requirements, user stories, actors, and business rules.
 - **Software Design Specification (SDS):** Describes the system design, use cases, state diagrams, and data flow.
 
-> Update the links below to match the actual PDF filenames and locations in this repository.
+
 
 - [View the SRS](ClinicQ_SRS.pdf)
 - [View the SDS](ClinicQ_SDS.pdf)
