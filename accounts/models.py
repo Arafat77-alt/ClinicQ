@@ -3,7 +3,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import Q
+from django.db.models import F, Q
 
 
 class User(AbstractUser):
@@ -55,7 +55,12 @@ class Patient(models.Model):
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="patient"
     )
     guardian = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="dependents"
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="dependents",
+        limit_choices_to={"guardian__isnull": True},
     )
     full_name = models.CharField(max_length=150)
     mobile_number = models.CharField(max_length=14, validators=[mobile_number_validator])
@@ -75,7 +80,12 @@ class Patient(models.Model):
                     "choose that person in the Guardian field. "
                     "Otherwise, enter a different mobile number."
                 ),
-            )
+            ),
+            models.CheckConstraint(
+                check=~Q(id=F("guardian")),
+                name="patient_cannot_be_own_guardian",
+                violation_error_message="A patient cannot be their own guardian.",
+            ),
         ]
 
     def __str__(self):

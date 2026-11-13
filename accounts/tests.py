@@ -22,3 +22,11 @@ class PatientMobileNumberTests(TestCase):
             full_name="Her Mother", mobile_number="+8801712345678", guardian=guardian
         )
         self.assertEqual(dependent.guardian, guardian)
+
+    def test_patient_cannot_be_their_own_guardian(self):
+        """A patient must not be recorded as managing themselves."""
+        patient = Patient.objects.create(
+            full_name="Rahima Akter", mobile_number="+8801712345678"
+        )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Patient.objects.filter(pk=patient.pk).update(guardian=patient)
