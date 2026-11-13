@@ -34,8 +34,8 @@ The following documents describe the system requirements and software design:
 
 
 
-- [View the SRS](ClinicQ_SRS.pdf)
-- [View the SDS](ClinicQ_SDS.pdf)
+- [View the SRS](docs/SRS/ClinicQ_SRS.pdf)
+- [View the SDS](docs/SDS/ClinicQ-SDS.pdf)
 
 ## Project Team
 
