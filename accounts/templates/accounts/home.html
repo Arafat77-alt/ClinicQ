@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Home - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-3">Welcome, {{ user.get_full_name|default:user.username }}</h1>
+  <p>You are logged in as: <strong>{{ user.get_role_display }}</strong>.</p>
+  {% if user.role == "admin" %}
+    <a class="btn btn-primary" href="{% url 'accounts:staff_list' %}">Manage staff accounts</a>
+  {% endif %}
+{% endblock %}
