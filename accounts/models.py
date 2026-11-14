@@ -1,9 +1,19 @@
 """Models for the accounts application."""
 
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import UserManager as DjangoUserManager
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
+
+
+class UserManager(DjangoUserManager):
+    """Create accounts, giving every superuser the clinic administrator role."""
+
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
+        """Create a superuser who is also a clinic administrator (AUTH-05)."""
+        extra_fields.setdefault("role", "admin")
+        return super().create_superuser(username, email, password, **extra_fields)
 
 
 class User(AbstractUser):
@@ -14,6 +24,8 @@ class User(AbstractUser):
 
     Attributes:
         role: What this person is allowed to do in the system.
+        must_change_password: True until the person sets their own password
+            after the first login (AUTH-05).
     """
 
     class Role(models.TextChoices):
@@ -25,6 +37,9 @@ class User(AbstractUser):
         ADMIN = "admin", "Clinic administrator"
 
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.PATIENT)
+    must_change_password = models.BooleanField(default=False)
+
+    objects = UserManager()
 
 
 mobile_number_validator = RegexValidator(
