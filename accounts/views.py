@@ -2,7 +2,14 @@
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView, PasswordChangeView
+from django.contrib.auth.views import (
+    LoginView,
+    PasswordChangeView,
+    PasswordResetCompleteView,
+    PasswordResetConfirmView,
+    PasswordResetDoneView,
+    PasswordResetView,
+)
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -15,7 +22,7 @@ from .services import STAFF_ROLES, create_staff_account, deactivate_staff_accoun
 
 
 class ClinicLoginView(LoginView):
-    """Show the login page (the full staff login is finished in AUTH-06)."""
+    """Show the staff login page (AUTH-06)."""
 
     template_name = "accounts/login.html"
     authentication_form = ClinicLoginForm
@@ -34,6 +41,48 @@ class FirstPasswordChangeView(PasswordChangeView):
         self.request.user.must_change_password = False
         self.request.user.save(update_fields=["must_change_password"])
         return response
+
+
+class ClinicPasswordResetView(PasswordResetView):
+    """Ask for an email address and send a reset link (AUTH-06)."""
+
+    template_name = "accounts/password_reset_form.html"
+    email_template_name = "accounts/password_reset_email.txt"
+    subject_template_name = "accounts/password_reset_subject.txt"
+    success_url = reverse_lazy("accounts:password_reset_done")
+
+
+class ClinicPasswordResetDoneView(PasswordResetDoneView):
+    """Tell the person to check their email (AUTH-06)."""
+
+    template_name = "accounts/password_reset_done.html"
+
+
+class ClinicPasswordResetConfirmView(PasswordResetConfirmView):
+    """Let the person choose a new password from the emailed link (AUTH-06).
+
+    The link works once and for 30 minutes (PASSWORD_RESET_TIMEOUT in the
+    settings). Choosing a new password also removes any lock.
+    """
+
+    template_name = "accounts/password_reset_confirm.html"
+    success_url = reverse_lazy("accounts:password_reset_complete")
+
+    def form_valid(self, form):
+        """Save the new password, and clear the lock and the temporary flag."""
+        response = super().form_valid(form)
+        user = self.user
+        user.must_change_password = False
+        user.failed_login_count = 0
+        user.locked_until = None
+        user.save(update_fields=["must_change_password", "failed_login_count", "locked_until"])
+        return response
+
+
+class ClinicPasswordResetCompleteView(PasswordResetCompleteView):
+    """Confirm that the password was changed (AUTH-06)."""
+
+    template_name = "accounts/password_reset_complete.html"
 
 
 @login_required

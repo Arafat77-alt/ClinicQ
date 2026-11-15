@@ -1,17 +1,26 @@
 """Forms for the accounts application."""
 
 from django import forms
+from django.contrib.auth import authenticate
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ValidationError
 
-from .services import STAFF_ROLES
+from .services import (
+    STAFF_ROLES,
+    find_account,
+    is_locked,
+    lock_message,
+    record_failed_login,
+    record_successful_login,
+)
 
 
 class ClinicLoginForm(AuthenticationForm):
-    """Login form with plain-language error messages (USAB-06)."""
+    """Login form with a lock after 5 wrong passwords and plain messages (AUTH-06)."""
 
     error_messages = {
         "invalid_login": (
-            "The username or password is not correct. "
+            "The email or password is not correct. "
             "Check both and try again. Passwords are case sensitive."
         ),
         "inactive": (
@@ -20,6 +29,30 @@ class ClinicLoginForm(AuthenticationForm):
         ),
     }
 
+    def __init__(self, *args, **kwargs):
+        """Label the first field as an email address."""
+        super().__init__(*args, **kwargs)
+        self.fields["username"].label = "Email"
+
+    def clean(self):
+        """Check the lock, then the password, and count wrong passwords (SEC-04)."""
+        identifier = self.cleaned_data.get("username")
+        password = self.cleaned_data.get("password")
+        if identifier is not None and password:
+            account = find_account(identifier)
+            if account is not None and is_locked(account):
+                raise ValidationError(lock_message(account), code="locked")
+            self.user_cache = authenticate(self.request, username=identifier, password=password)
+            if self.user_cache is None:
+                if account is not None:
+                    record_failed_login(account)
+                    if is_locked(account):
+                        raise ValidationError(lock_message(account), code="locked")
+                raise self.get_invalid_login_error()
+            self.confirm_login_allowed(self.user_cache)
+            record_successful_login(self.user_cache)
+        return self.cleaned_data
+
 
 class StaffAccountForm(forms.Form):
     """Details the administrator enters to create a staff account (AUTH-05)."""
@@ -27,7 +60,7 @@ class StaffAccountForm(forms.Form):
     username = forms.CharField(max_length=150)
     first_name = forms.CharField(max_length=150, required=False)
     last_name = forms.CharField(max_length=150, required=False)
-    email = forms.EmailField()
+    email = forms.EmailField(help_text="The person logs in with this email address.")
     role = forms.ChoiceField(choices=[(role.value, role.label) for role in STAFF_ROLES])
     temporary_password = forms.CharField(
         widget=forms.PasswordInput,
