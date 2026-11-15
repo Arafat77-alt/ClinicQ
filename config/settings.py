@@ -48,7 +48,10 @@ INSTALLED_APPS = [
 ]
 
 AUTH_USER_MODEL = "accounts.User"
-AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.AllowAllUsersModelBackend"]
+AUTHENTICATION_BACKENDS = ["accounts.backends.EmailOrUsernameBackend"]
+PASSWORD_RESET_TIMEOUT = 30 * 60
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "ClinicQ <no-reply@clinicq.local>"
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "accounts:home"
 LOGOUT_REDIRECT_URL = "accounts:login"
