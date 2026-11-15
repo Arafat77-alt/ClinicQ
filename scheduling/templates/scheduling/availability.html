@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}My availability - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-3">My weekly availability</h1>
+  {% if not doctor %}
+    <p>Your doctor profile has not been created yet, so you cannot set your availability.
+       Please ask the clinic administrator to create it.</p>
+  {% else %}
+    <p>Patients can only book the times listed here. Add one session for each part of the day you work.</p>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <span class="text-muted">Dr. {{ doctor.user.get_full_name|default:doctor.user.username }} ({{ doctor.code }})</span>
+      <a class="btn btn-primary" href="{% url 'scheduling:rule_add' %}">Add a session</a>
+    </div>
+    {% for rule in rules %}
+      <div class="border rounded-3 p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <strong>{{ rule.get_weekday_display }}</strong>
+            {{ rule.start_time|time:"H:i" }} to {{ rule.end_time|time:"H:i" }}
+            <div class="text-muted">{{ rule.slot_minutes }}-minute slots, {{ rule.slot_count }} slots every week</div>
+          </div>
+          <form method="post" action="{% url 'scheduling:rule_delete' rule.pk %}" class="m-0">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger btn-sm">Remove session</button>
+          </form>
+        </div>
+        <div class="mt-2">
+          {% for item in rule.breaks.all %}
+            <div class="d-flex justify-content-between align-items-center py-1">
+              <span>Break {{ item.start_time|time:"H:i" }} to {{ item.end_time|time:"H:i" }}</span>
+              <form method="post" action="{% url 'scheduling:break_delete' item.pk %}" class="m-0">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm">Remove break</button>
+              </form>
+            </div>
+          {% endfor %}
+          <a href="{% url 'scheduling:break_add' rule.pk %}">Add a break</a>
+        </div>
+      </div>
+    {% empty %}
+      <p>You have not added any sessions yet. Click "Add a session" to start.</p>
+    {% endfor %}
+  {% endif %}
+{% endblock %}
