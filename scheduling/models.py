@@ -2,10 +2,13 @@
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
+from django.db.models import F, Q
 
 from accounts.models import User
+
+from .services import slot_windows
 
 doctor_code_validator = RegexValidator(
     regex=r"^D\d{1,3}$",
@@ -70,3 +73,131 @@ class Doctor(models.Model):
         """Return the name, code and specialty, which is how staff pick a doctor."""
         name = self.user.get_full_name() or self.user.username
         return f"Dr. {name} ({self.code}, {self.specialty})"
+
+
+class ScheduleRule(models.Model):
+    """One weekly working session of a doctor, for example Monday 17:00 to 21:00.
+
+    Supports SCH-02. A doctor may have several sessions on one weekday, for
+    example a morning and an evening session, as long as they do not overlap.
+    The bookable slots are worked out from the session (see services.py), so
+    no slot rows are stored.
+
+    Attributes:
+        doctor: The doctor who works this session.
+        weekday: Day of the week (Python numbering: Monday is 0).
+        start_time: When the session starts.
+        end_time: When the session ends.
+        slot_minutes: Length of one appointment slot in this session.
+    """
+
+    class Weekday(models.IntegerChoices):
+        """Days of the week, listed from Saturday as in Bangladesh."""
+
+        SATURDAY = 5, "Saturday"
+        SUNDAY = 6, "Sunday"
+        MONDAY = 0, "Monday"
+        TUESDAY = 1, "Tuesday"
+        WEDNESDAY = 2, "Wednesday"
+        THURSDAY = 3, "Thursday"
+        FRIDAY = 4, "Friday"
+
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name="schedule_rules")
+    weekday = models.PositiveSmallIntegerField(choices=Weekday.choices)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    slot_minutes = models.PositiveSmallIntegerField(
+        default=15, validators=[MinValueValidator(5), MaxValueValidator(120)]
+    )
+
+    class Meta:
+        ordering = ["weekday", "start_time"]
+        constraints = [
+            models.CheckConstraint(
+                check=Q(end_time__gt=F("start_time")),
+                name="session_ends_after_it_starts",
+                violation_error_message=(
+                    "The session must end after it starts. "
+                    "Check the start and end times and try again."
+                ),
+            )
+        ]
+
+    def clean(self):
+        """Check the times make sense and do not overlap another session."""
+        if self.start_time is None or self.end_time is None:
+            return
+        if self.end_time <= self.start_time:
+            raise ValidationError(
+                "The end time must be after the start time. "
+                "Check both times and try again."
+            )
+        if self.slot_minutes:
+            length = (self.end_time.hour * 60 + self.end_time.minute) - (
+                self.start_time.hour * 60 + self.start_time.minute
+            )
+            if length < self.slot_minutes:
+                raise ValidationError(
+                    f"This session is only {length} minutes long, which is shorter than "
+                    f"one {self.slot_minutes}-minute slot. Make the session longer or "
+                    "choose a shorter slot length."
+                )
+        if self.doctor_id is None or self.weekday is None:
+            return
+        others = ScheduleRule.objects.filter(doctor_id=self.doctor_id, weekday=self.weekday)
+        for other in others.exclude(pk=self.pk):
+            if self.start_time < other.end_time and self.end_time > other.start_time:
+                raise ValidationError(
+                    f"This session overlaps your {other.get_weekday_display()} session from "
+                    f"{other.start_time:%H:%M} to {other.end_time:%H:%M}. "
+                    "Change the times, or delete the other session first."
+                )
+
+    @property
+    def slot_count(self):
+        """Return how many bookable slots this session offers every week."""
+        return len(slot_windows(self))
+
+    def __str__(self):
+        """Return the day and times, for example Monday 17:00-21:00."""
+        return f"{self.get_weekday_display()} {self.start_time:%H:%M}-{self.end_time:%H:%M}"
+
+
+class ScheduleBreak(models.Model):
+    """A break inside a weekly session, for example 19:00 to 19:30 (SCH-02).
+
+    Slots that overlap a break are not offered to patients.
+
+    Attributes:
+        rule: The session this break belongs to.
+        start_time: When the break starts.
+        end_time: When the break ends.
+    """
+
+    rule = models.ForeignKey(ScheduleRule, on_delete=models.CASCADE, related_name="breaks")
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    class Meta:
+        ordering = ["start_time"]
+
+    def clean(self):
+        """Check the break ends after it starts and sits inside its session."""
+        if self.start_time is None or self.end_time is None:
+            return
+        if self.end_time <= self.start_time:
+            raise ValidationError(
+                "The break must end after it starts. Check both times and try again."
+            )
+        if self.rule_id is None:
+            return
+        if self.start_time < self.rule.start_time or self.end_time > self.rule.end_time:
+            raise ValidationError(
+                f"The break must be inside the session, which runs from "
+                f"{self.rule.start_time:%H:%M} to {self.rule.end_time:%H:%M}. "
+                "Change the break times and try again."
+            )
+
+    def __str__(self):
+        """Return the break times, for example 19:00-19:30."""
+        return f"{self.start_time:%H:%M}-{self.end_time:%H:%M}"
