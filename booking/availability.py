@@ -1,4 +1,4 @@
-"""Finding doctors and their free slots (BKG-01, BKG-02)."""
+"""Finding doctors and their free slots (BKG-01, BKG-02, BKG-09)."""
 
 from datetime import timedelta
 
@@ -50,16 +50,19 @@ def list_specialties():
     return sorted(set(names), key=str.lower)
 
 
-def free_slots(doctor, now=None):
-    """List the slots a patient can still book with a doctor (BKG-02, BR-03).
+def free_slots(doctor, now=None, reception=False):
+    """List the slots that can still be booked with a doctor (BKG-02, BKG-09, BR-03).
 
-    A slot is offered when it starts at least 30 minutes from now and no more
-    than 14 days ahead, and no active appointment already holds it. Cancelled
-    appointments free their slot (BR-01).
+    For patients, a slot is offered when it starts at least 30 minutes from now
+    and no more than 14 days ahead. Reception may book until the slot ends, so
+    for reception a slot is offered while it has not finished. In both cases a
+    slot held by an active appointment is hidden, and a cancelled appointment
+    frees its slot (BR-01).
 
     Args:
         doctor: The Doctor.
         now: The current time. Only tests pass this.
+        reception: True when a receptionist is booking.
 
     Returns:
         A list of (date, slots) pairs in date order, where slots is a list of
@@ -68,22 +71,30 @@ def free_slots(doctor, now=None):
     now = now or timezone.now()
     earliest = now + timedelta(minutes=MIN_LEAD_MINUTES)
     latest = now + timedelta(days=BOOKING_WINDOW_DAYS)
+    first_moment = now - timedelta(days=1) if reception else earliest
     taken = set(
         Appointment.objects.filter(
             doctor=doctor,
             status__in=ACTIVE_STATUSES,
-            slot_start__gte=earliest,
+            slot_start__gte=first_moment,
             slot_start__lte=latest,
         ).values_list("slot_start", flat=True)
     )
+
+    def can_book(start, end):
+        """Apply the booking rule of the person who is booking."""
+        if reception:
+            return end > now and start <= latest
+        return earliest <= start <= latest
+
     result = []
-    day = timezone.localdate(earliest)
+    day = timezone.localdate(now if reception else earliest)
     last_day = timezone.localdate(latest)
     while day <= last_day:
         slots = [
             (start, end)
             for start, end in generate_slots(doctor, day)
-            if earliest <= start <= latest and start not in taken
+            if can_book(start, end) and start not in taken
         ]
         if slots:
             result.append((day, slots))
