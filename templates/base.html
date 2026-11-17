@@ -134,7 +134,11 @@
 <body>
   <nav class="navbar navbar-dark cq-navbar mb-4">
     <div class="container">
-      <a class="navbar-brand" href="{% url 'accounts:home' %}">ClinicQ</a>
+            <div class="d-flex align-items-center gap-4">
+        <a class="navbar-brand m-0" href="{% url 'accounts:home' %}">ClinicQ</a>
+        <a class="text-white text-decoration-none" href="{% url 'booking:doctor_search' %}">Find a doctor</a>
+      </div>
+
       {% if user.is_authenticated %}
         <form method="post" action="{% url 'accounts:logout' %}" class="d-flex align-items-center gap-2 m-0">
           {% csrf_token %}
