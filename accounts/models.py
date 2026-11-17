@@ -2,9 +2,10 @@
 
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import UserManager as DjangoUserManager
-from django.core.validators import RegexValidator
+from django.core.validators import MaxValueValidator, RegexValidator
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 
 class UserManager(DjangoUserManager):
@@ -26,6 +27,8 @@ class User(AbstractUser):
         role: What this person is allowed to do in the system.
         must_change_password: True until the person sets their own password
             after the first login (AUTH-05).
+        failed_login_count: Wrong passwords entered in a row (AUTH-06).
+        locked_until: When a locked account may be used again (AUTH-06, SEC-04).
     """
 
     class Role(models.TextChoices):
@@ -66,6 +69,7 @@ class Patient(models.Model):
         full_name: The patient's full name.
         mobile_number: Bangladeshi mobile number in +8801XXXXXXXXX format.
         date_of_birth: Optional, because walk-ins may only give an age.
+        approx_age: Age in years when only an age is known (BKG-09, QUE-03).
     """
 
     user = models.OneToOneField(
@@ -77,6 +81,9 @@ class Patient(models.Model):
     full_name = models.CharField(max_length=150)
     mobile_number = models.CharField(max_length=14, validators=[mobile_number_validator])
     date_of_birth = models.DateField(null=True, blank=True)
+    approx_age = models.PositiveSmallIntegerField(
+        null=True, blank=True, validators=[MaxValueValidator(120)]
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -94,6 +101,18 @@ class Patient(models.Model):
                 ),
             )
         ]
+
+    @property
+    def age(self):
+        """Return the age in years from the date of birth, or the approximate age."""
+        if self.date_of_birth:
+            today = timezone.localdate()
+            had_birthday = (today.month, today.day) >= (
+                self.date_of_birth.month,
+                self.date_of_birth.day,
+            )
+            return today.year - self.date_of_birth.year - (0 if had_birthday else 1)
+        return self.approx_age
 
     def __str__(self):
         """Return the name and number, which is how staff search for a patient."""
