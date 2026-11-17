@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Choose a doctor - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-1">2. Choose a doctor</h1>
+  <p class="text-muted">Booking for <strong>{{ patient.full_name }}</strong> ({{ patient.mobile_number }})</p>
+  {% for doctor in doctors %}
+    <div class="border rounded-3 p-3 mb-2 d-flex justify-content-between align-items-center">
+      <div>
+        <strong>Dr. {{ doctor.user.get_full_name|default:doctor.user.username }}</strong>
+        <div class="text-muted">{{ doctor.specialty }} &middot; Room {{ doctor.room }}</div>
+      </div>
+      <a class="btn btn-primary" href="{% url 'booking:reception_slots' patient.pk doctor.pk %}">See free times</a>
+    </div>
+  {% empty %}
+    <p>There are no active doctors yet. Ask the clinic administrator to add doctors.</p>
+  {% endfor %}
+  <a href="{% url 'booking:reception_start' %}">&larr; Choose a different caller</a>
+{% endblock %}

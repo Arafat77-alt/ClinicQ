@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Appointment booked - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-3">The appointment is booked</h1>
+  <p>Read this reference number to the caller:</p>
+  <p class="display-6 fw-bold" style="color: var(--cq-primary-dark);">{{ appointment.reference_number }}</p>
+  <table class="table">
+    <tr><th scope="row">Patient</th><td>{{ appointment.patient.full_name }} ({{ appointment.patient.mobile_number }})</td></tr>
+    <tr><th scope="row">Doctor</th><td>Dr. {{ appointment.doctor.user.get_full_name|default:appointment.doctor.user.username }}, {{ appointment.doctor.specialty }}, Room {{ appointment.doctor.room }}</td></tr>
+    <tr><th scope="row">Date</th><td>{{ appointment.slot_start|date:"l, j F Y" }}</td></tr>
+    <tr><th scope="row">Time</th><td>{{ appointment.slot_start|time:"H:i" }} to {{ appointment.slot_end|time:"H:i" }} (Dhaka time)</td></tr>
+    <tr><th scope="row">Type</th><td>{{ appointment.get_type_display }}</td></tr>
+  </table>
+  <a class="btn btn-primary" href="{% url 'booking:reception_start' %}">Book another appointment</a>
+{% endblock %}

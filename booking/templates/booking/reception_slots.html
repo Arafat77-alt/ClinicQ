@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Choose a time - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-1">3. Choose a time</h1>
+  <p class="text-muted">
+    <strong>{{ patient.full_name }}</strong> with
+    <strong>Dr. {{ doctor.user.get_full_name|default:doctor.user.username }}</strong> ({{ doctor.specialty }})
+  </p>
+  {% if days %}
+    <form method="post">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <div>
+        <label for="id_reason">Reason for the visit (optional)</label>
+        <input type="text" name="reason" id="id_reason" maxlength="255" value="{{ form.reason.value|default:'' }}">
+      </div>
+      <p class="mt-3 mb-2">Click a time to book it:</p>
+      {% for day, slots in days %}
+        <div class="mb-3">
+          <strong>{{ day|date:"l, j F" }}</strong>
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            {% for slot in slots %}
+              <button type="submit" name="slot_start" value="{{ slot.0.isoformat }}"
+                      class="btn btn-outline-primary btn-sm">{{ slot.0|time:"H:i" }}</button>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </form>
+  {% else %}
+    <p>This doctor has no free times in the next 14 days. Choose another doctor.</p>
+  {% endif %}
+  <p class="text-muted small">All times are Dhaka time.</p>
+  <a href="{% url 'booking:reception_doctors' patient.pk %}">&larr; Choose a different doctor</a>
+{% endblock %}
