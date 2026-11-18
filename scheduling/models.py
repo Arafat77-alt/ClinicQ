@@ -1,15 +1,20 @@
 """Models for the scheduling application."""
 
 from django.conf import settings
+"""Models for the scheduling application."""
+
+from datetime import datetime, time, timedelta
+
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import F, Q
+from django.utils import timezone
 
 from accounts.models import User
 
 from .services import slot_windows
-
 doctor_code_validator = RegexValidator(
     regex=r"^D\d{1,3}$",
     message="Enter a doctor code that starts with D followed by a number, for example D2.",
@@ -201,3 +206,67 @@ class ScheduleBreak(models.Model):
     def __str__(self):
         """Return the break times, for example 19:00-19:30."""
         return f"{self.start_time:%H:%M}-{self.end_time:%H:%M}"
+
+
+class DoctorLeave(models.Model):
+    """Days or hours when a doctor is away (SCH-03, BR-13).
+
+    Without times, the leave covers whole days from the start date to the end
+    date. With times, it covers part of one day, for example 17:00 to 19:00.
+    No slots are offered during a leave, and appointments that fall inside it
+    must be moved (see leave.py).
+
+    Attributes:
+        doctor: The doctor who is away.
+        start_date: The first day of the leave.
+        end_date: The last day of the leave.
+        start_time: When the leave starts, for leave of a few hours only.
+        end_time: When the leave ends, for leave of a few hours only.
+        reason: Optional note for the clinic.
+    """
+
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name="leaves")
+    start_date = models.DateField()
+    end_date = models.DateField()
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    reason = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["start_date", "start_time"]
+        constraints = [
+            models.CheckConstraint(
+                check=Q(end_date__gte=F("start_date")),
+                name="leave_ends_on_or_after_it_starts",
+                violation_error_message=(
+                    "The last day of the leave cannot be before the first day. "
+                    "Check both dates and try again."
+                ),
+            )
+        ]
+
+    @property
+    def starts_at(self):
+        """Return the moment the leave starts, as a Dhaka-time datetime."""
+        return timezone.make_aware(datetime.combine(self.start_date, self.start_time or time.min))
+
+    @property
+    def ends_at(self):
+        """Return the moment the leave ends, as a Dhaka-time datetime."""
+        if self.end_time:
+            return timezone.make_aware(datetime.combine(self.end_date, self.end_time))
+        return timezone.make_aware(
+            datetime.combine(self.end_date + timedelta(days=1), time.min)
+        )
+
+    def __str__(self):
+        """Return the period in words, for example 16 Nov 2026 to 18 Nov 2026."""
+        if self.start_time:
+            return (
+                f"{self.start_date:%d %b %Y} {self.start_time:%H:%M} to "
+                f"{self.end_time:%H:%M}"
+            )
+        if self.start_date == self.end_date:
+            return f"{self.start_date:%d %b %Y}"
+        return f"{self.start_date:%d %b %Y} to {self.end_date:%d %b %Y}"        

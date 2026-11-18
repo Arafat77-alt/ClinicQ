@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}My leave - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-3">My leave</h1>
+  {% if not doctor %}
+    <p>Your doctor profile has not been created yet, so you cannot set leave.
+       Please ask the clinic administrator to create it.</p>
+  {% else %}
+    <p>While you are on leave, patients cannot book those times. Appointments that are already
+       booked in that period are moved to "Needs rescheduling", and the patients are told.</p>
+
+    <h2 class="h5 mt-4">Add leave</h2>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_div }}
+      <button type="submit" class="btn btn-primary mt-3">Save leave</button>
+    </form>
+
+    <h2 class="h5 mt-5">Upcoming leave</h2>
+    {% for leave in leaves %}
+      <div class="border rounded-3 p-3 mb-2 d-flex justify-content-between align-items-center">
+        <div>
+          <strong>{{ leave }}</strong>
+          {% if leave.reason %}<div class="text-muted">{{ leave.reason }}</div>{% endif %}
+        </div>
+        <form method="post" action="{% url 'scheduling:leave_delete' leave.pk %}" class="m-0">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-danger btn-sm">Remove leave</button>
+        </form>
+      </div>
+    {% empty %}
+      <p>You have no upcoming leave.</p>
+    {% endfor %}
+  {% endif %}
+{% endblock %}
