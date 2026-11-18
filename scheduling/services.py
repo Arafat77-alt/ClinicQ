@@ -58,11 +58,11 @@ def slot_windows(rule):
 
 
 def generate_slots(doctor, day):
-    """List a doctor's bookable slots on one date (SCH-02, BKG-02).
+    """List a doctor's bookable slots on one date (SCH-02, SCH-03, BKG-02).
 
     Slots come from the weekly sessions, so no slot is stored in the database
-    until someone books it. Doctor leave (SCH-03) and clinic closed days
-    (SCH-05) will be taken out here later.
+    until someone books it. Slots that fall inside the doctor's leave are left
+    out (BR-13). Clinic closed days (SCH-05) will be taken out here later.
 
     Args:
         doctor: The Doctor.
@@ -74,14 +74,16 @@ def generate_slots(doctor, day):
     """
     if not doctor.is_active:
         return []
+    leaves = list(doctor.leaves.filter(start_date__lte=day, end_date__gte=day))
     slots = []
     rules = doctor.schedule_rules.filter(weekday=day.weekday()).prefetch_related("breaks")
     for rule in rules:
         for start, end in slot_windows(rule):
-            slots.append(
-                (
-                    timezone.make_aware(datetime.combine(day, start)),
-                    timezone.make_aware(datetime.combine(day, end)),
-                )
+            slot_start = timezone.make_aware(datetime.combine(day, start))
+            slot_end = timezone.make_aware(datetime.combine(day, end))
+            on_leave = any(
+                slot_start < leave.ends_at and slot_end > leave.starts_at for leave in leaves
             )
+            if not on_leave:
+                slots.append((slot_start, slot_end))
     return sorted(slots)

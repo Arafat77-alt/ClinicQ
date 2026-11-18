@@ -12,4 +12,6 @@ urlpatterns = [
     path("availability/<int:rule_id>/delete/", views.rule_delete, name="rule_delete"),
     path("availability/<int:rule_id>/break/new/", views.break_add, name="break_add"),
     path("availability/breaks/<int:break_id>/delete/", views.break_delete, name="break_delete"),
+    path("leave/", views.leave_list, name="leave_list"),
+    path("leave/<int:leave_id>/delete/", views.leave_delete, name="leave_delete"),
 ]
