@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Add staff account - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-3">Add staff account</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <button type="submit" class="btn btn-primary mt-3">Create account</button>
+    <a class="btn btn-link mt-3" href="{% url 'accounts:staff_list' %}">Cancel</a>
+  </form>
+{% endblock %}

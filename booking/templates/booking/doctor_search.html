@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Find a doctor - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-3">Find a doctor</h1>
+  <div class="alert alert-warning">If this is an emergency, call 999 or go to the nearest hospital.</div>
+  <form method="get" class="d-flex gap-2 mb-4">
+    <input type="text" name="q" value="{{ query }}" placeholder="Doctor name or specialty, for example cardio"
+           aria-label="Doctor name or specialty" class="form-control">
+    <button type="submit" class="btn btn-primary">Search</button>
+  </form>
+
+  {% if doctors %}
+    {% for doctor in doctors %}
+      <div class="border rounded-3 p-3 mb-3 d-flex justify-content-between align-items-center">
+        <div>
+          <strong>Dr. {{ doctor.user.get_full_name|default:doctor.user.username }}</strong>
+          <div class="text-muted">{{ doctor.specialty }} &middot; Room {{ doctor.room }}</div>
+        </div>
+        <a class="btn btn-primary" href="{% url 'booking:doctor_detail' doctor.pk %}">See free times</a>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>We could not find a doctor for "{{ query }}". Check the spelling, or choose one of the specialties below.</p>
+    {% if specialties %}
+      <div class="d-flex flex-wrap gap-2">
+        {% for name in specialties %}
+          <a class="btn btn-outline-secondary btn-sm" href="{% url 'booking:doctor_search' %}?q={{ name|urlencode }}">{{ name }}</a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>There are no doctors available yet. Please check again later.</p>
+    {% endif %}
+  {% endif %}
+{% endblock %}

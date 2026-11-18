@@ -8,9 +8,14 @@ from .models import Patient, User
 
 @admin.register(User)
 class ClinicUserAdmin(UserAdmin):
-    """Show the role field in the Django admin site."""
+    """Show the role fields in the Django admin site."""
 
-    fieldsets = UserAdmin.fieldsets + (("Clinic role", {"fields": ("role",)}),)
+    fieldsets = UserAdmin.fieldsets + (
+        (
+            "Clinic role",
+            {"fields": ("role", "must_change_password", "failed_login_count", "locked_until")},
+        ),
+    )
     list_display = ("username", "email", "role", "is_active")
 
 

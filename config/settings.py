@@ -48,6 +48,13 @@ INSTALLED_APPS = [
 ]
 
 AUTH_USER_MODEL = "accounts.User"
+AUTHENTICATION_BACKENDS = ["accounts.backends.EmailOrUsernameBackend"]
+PASSWORD_RESET_TIMEOUT = 30 * 60
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "ClinicQ <no-reply@clinicq.local>"
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "accounts:home"
+LOGOUT_REDIRECT_URL = "accounts:login"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -55,6 +62,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    "accounts.middleware.ForcePasswordChangeMiddleware",
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -64,7 +72,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
