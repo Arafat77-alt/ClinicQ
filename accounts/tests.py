@@ -38,6 +38,14 @@ class PatientMobileNumberTests(TestCase):
         )
         self.assertEqual(dependent.guardian, guardian)
 
+    def test_patient_cannot_be_their_own_guardian(self):
+        """A patient must not be recorded as managing themselves."""
+        patient = Patient.objects.create(
+            full_name="Rahima Akter", mobile_number="+8801712345678"
+        )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Patient.objects.filter(pk=patient.pk).update(guardian=patient)
+
     def test_duplicate_number_shows_a_clear_message(self):
         """USAB-06: the error must explain the reason and how to fix it."""
         Patient.objects.create(full_name="Rahima Akter", mobile_number="+8801712345678")
