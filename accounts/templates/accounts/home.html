@@ -5,6 +5,7 @@
   <p>You are logged in as: <strong>{{ user.get_role_display }}</strong>.</p>
   {% if user.role == "doctor" %}
     <a class="btn btn-primary" href="{% url 'scheduling:availability' %}">My weekly availability</a>
+    <a class="btn btn-primary" href="{% url 'scheduling:leave_list' %}">My leave</a>
   {% endif %}
   {% if user.role == "receptionist" %}
     <a class="btn btn-primary" href="{% url 'booking:reception_start' %}">Book an appointment by phone</a>
