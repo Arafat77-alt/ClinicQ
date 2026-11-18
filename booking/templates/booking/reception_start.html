@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Book by phone - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-3">Book an appointment by phone</h1>
+  <h2 class="h5">1. Find the caller</h2>
+  <form method="get" class="d-flex gap-2 mb-4">
+    <input type="text" name="q" value="{{ query }}" placeholder="Mobile number or name"
+           aria-label="Mobile number or name" class="form-control" autofocus>
+    <button type="submit" class="btn btn-primary">Search</button>
+  </form>
+
+  {% if patients %}
+    <p>Choose who the appointment is for:</p>
+    {% for patient in patients %}
+      <div class="border rounded-3 p-3 mb-2 d-flex justify-content-between align-items-center">
+        <div>
+          <strong>{{ patient.full_name }}</strong>
+          {% if patient.age is not None %}<span class="text-muted">, age {{ patient.age }}</span>{% endif %}
+          <div class="text-muted">{{ patient.mobile_number }}{% if patient.guardian %} &middot; dependent of {{ patient.guardian.full_name }}{% endif %}</div>
+        </div>
+        <a class="btn btn-primary" href="{% url 'booking:reception_doctors' patient.pk %}">Book for this person</a>
+      </div>
+    {% endfor %}
+  {% elif searched %}
+    <p>No patient was found for "{{ query }}". Register the caller below, with only a name, a number and an age.</p>
+  {% endif %}
+
+  <h2 class="h5 mt-4">Caller is not in the list? Register them</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <button type="submit" class="btn btn-primary mt-3">Register and continue</button>
+  </form>
+{% endblock %}

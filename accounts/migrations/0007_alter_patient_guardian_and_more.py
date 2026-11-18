@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0003_remove_patient_uniq_mobile_for_non_dependents_and_more'),
+        ('accounts', '0006_patient_approx_age'),
     ]
 
     operations = [
