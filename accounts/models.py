@@ -127,3 +127,41 @@ class Patient(models.Model):
     def __str__(self):
         """Return the name and number, which is how staff search for a patient."""
         return f"{self.full_name} ({self.mobile_number})"
+
+
+class OtpChallenge(models.Model):
+    """Stores an active one-time password challenge for a mobile number.
+
+    Supports AUTH-01 (patient registration) and AUTH-02 (patient login) by
+    persisting the code, creation timestamp, wrong-attempt count, and
+    15-minute lockout timestamp required by SEC-04.
+
+    Attributes:
+        mobile_number: Normalized +8801XXXXXXXXX number receiving the code.
+        purpose: Whether the challenge is for registration or login.
+        code: Six-digit one-time password string.
+        created_at: When the current code was generated.
+        attempts_used: Wrong verification attempts on the current code.
+        blocked_at: When the 3rd wrong attempt occurred (starts 15-min block).
+    """
+
+    class Purpose(models.TextChoices):
+        """Supported OTP verification flows."""
+
+        REGISTER = "register", "Register"
+        LOGIN = "login", "Login"
+
+    mobile_number = models.CharField(
+        max_length=14,
+        unique=True,
+        validators=[mobile_number_validator],
+    )
+    purpose = models.CharField(max_length=20, choices=Purpose.choices)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField()
+    attempts_used = models.PositiveSmallIntegerField(default=0)
+    blocked_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        """Return a readable summary of the OTP challenge."""
+        return f"OTP ({self.purpose}) for {self.mobile_number}"

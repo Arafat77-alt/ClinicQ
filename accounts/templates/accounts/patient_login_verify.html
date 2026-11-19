@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Enter login code - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-3">Enter your login code</h1>
+  <p>We sent a 6-digit code to <strong>{{ mobile_number }}</strong>.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <button type="submit" class="btn btn-primary mt-3">Log in</button>
+  </form>
+  <p class="mt-3 mb-0">
+    Need a new code? <a href="{% url 'accounts:patient_login' %}">Request another code</a>
+  </p>
+{% endblock %}

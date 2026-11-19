@@ -64,6 +64,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     "accounts.middleware.ForcePasswordChangeMiddleware",
     'django.contrib.messages.middleware.MessageMiddleware',
+    "accounts.middleware.SessionInactivityTimeoutMiddleware",
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
