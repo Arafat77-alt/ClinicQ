@@ -39,7 +39,7 @@ def book_online_appointment(
     """Book an online appointment for a patient or their dependent (BKG-03).
 
     Enforces BR-01 (one active booking per slot), BR-03 (14-day window and
-    30-minute lead time), REL-02 (atomic database uniqueness), and SEC-02
+    30-minute lead time), REL-02 (atomic database uniqueness), and SEC-01
     (patient may only book for themselves or their own dependents).
 
     Args:
@@ -72,8 +72,8 @@ def book_online_appointment(
     }
     if slot_start not in open_slots:
         raise ValidationError(
-            "This time is no longer available. It may have just been taken or is "
-            "less than 30 minutes away. Please choose another free time."
+            "Slot just taken — this time is no longer available. "
+            "Choose one of the nearby free times below."
         )
 
     try:
@@ -90,7 +90,8 @@ def book_online_appointment(
             )
     except IntegrityError as error:
         raise ValidationError(
-            "Another patient just booked this time slot. Please choose another free time."
+            "Slot just taken — another patient booked this time a moment ago. "
+            "Choose one of the nearby free times below."
         ) from error
 
 
@@ -131,12 +132,18 @@ def list_patient_appointments(guardian_patient, now=None):
 
 
 def can_cancel_appointment(appointment, now=None):
-    """Return True if a patient is allowed to cancel ``appointment`` online (BKG-05, BR-04)."""
+    """Return True if a patient is allowed to cancel ``appointment`` online (BKG-05, BR-04).
+
+    Appointments in ``needs_rescheduling`` (triggered when a doctor takes leave)
+    may be cancelled at any time before start, even within 2 hours.
+    """
     current_time = now or timezone.now()
     if appointment.status not in CANCELLABLE_STATUSES:
         return False
     if appointment.slot_start is None:
         return False
+    if appointment.status == Appointment.Status.NEEDS_RESCHEDULING:
+        return current_time <= appointment.slot_start
     cutoff = appointment.slot_start - timedelta(hours=CANCELLATION_LEAD_HOURS)
     return current_time <= cutoff
 
@@ -144,7 +151,7 @@ def can_cancel_appointment(appointment, now=None):
 def cancel_patient_appointment(guardian_patient, appointment_id, now=None):
     """Cancel an appointment for the logged-in patient or their dependent (BKG-05).
 
-    Enforces SEC-02 (family ownership), status eligibility, and BR-04 (must be
+    Enforces SEC-01 (family ownership), status eligibility, and BR-04 (must be
     cancelled at least 2 hours before ``slot_start``). Setting status to
     ``cancelled`` immediately releases the slot for other patients.
 
