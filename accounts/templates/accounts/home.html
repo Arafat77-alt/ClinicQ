@@ -1,8 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Home - ClinicQ{% endblock %}
 {% block content %}
-  <h1 class="h3 mb-3">Welcome, {{ user.get_full_name|default:user.username }}</h1>
+  <h1 class="h3 mb-3">
+    Welcome, {% if user.role == "patient" and user.patient %}{{ user.patient.full_name }}{% else %}{{ user.get_full_name|default:user.username }}{% endif %}
+  </h1>
   <p>You are logged in as: <strong>{{ user.get_role_display }}</strong>.</p>
+  {% if user.role == "patient" %}
+    <a class="btn btn-primary" href="{% url 'booking:doctor_search' %}">Find a doctor and book</a>
+  {% endif %}
   {% if user.role == "doctor" %}
     <a class="btn btn-primary" href="{% url 'scheduling:availability' %}">My weekly availability</a>
     <a class="btn btn-primary" href="{% url 'scheduling:leave_list' %}">My leave</a>

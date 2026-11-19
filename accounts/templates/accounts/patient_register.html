@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Patient registration - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-3">Create a patient account</h1>
+  <p class="text-muted">Enter your details and we will send a 6-digit verification code by SMS.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <button type="submit" class="btn btn-primary mt-3">Send verification code</button>
+  </form>
+  <p class="mt-3 mb-0">
+    Already registered? <a href="{% url 'accounts:patient_login' %}">Log in with a code</a>
+  </p>
+{% endblock %}
