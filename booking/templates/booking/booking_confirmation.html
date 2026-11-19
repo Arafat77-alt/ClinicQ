@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Booking confirmed - ClinicQ{% endblock %}
+{% block content %}
+  <div class="alert alert-success mb-4">
+    <h1 class="h4 mb-1">Your appointment is confirmed</h1>
+    <p class="mb-0">Reference number: <strong class="fs-5">{{ appointment.reference_number }}</strong></p>
+  </div>
+
+  <dl class="row mb-4">
+    <dt class="col-sm-4">Patient</dt>
+    <dd class="col-sm-8">{{ appointment.patient.full_name }}</dd>
+
+    <dt class="col-sm-4">Doctor</dt>
+    <dd class="col-sm-8">Dr. {{ appointment.doctor.user.get_full_name|default:appointment.doctor.user.username }} ({{ appointment.doctor.specialty }})</dd>
+
+    <dt class="col-sm-4">Room</dt>
+    <dd class="col-sm-8">{{ appointment.doctor.room }}</dd>
+
+    <dt class="col-sm-4">Date &amp; time</dt>
+    <dd class="col-sm-8">{{ appointment.slot_start|date:"l, j F Y" }}, {{ appointment.slot_start|time:"H:i" }} to {{ appointment.slot_end|time:"H:i" }}</dd>
+
+    {% if appointment.reason %}
+      <dt class="col-sm-4">Reason</dt>
+      <dd class="col-sm-8">{{ appointment.reason }}</dd>
+    {% endif %}
+  </dl>
+
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-primary" href="{% url 'booking:my_appointments' %}">View my appointments</a>
+    <a class="btn btn-outline-secondary" href="{% url 'booking:doctor_search' %}">Book another appointment</a>
+  </div>
+{% endblock %}

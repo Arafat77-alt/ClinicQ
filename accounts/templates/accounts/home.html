@@ -6,7 +6,10 @@
   </h1>
   <p>You are logged in as: <strong>{{ user.get_role_display }}</strong>.</p>
   {% if user.role == "patient" %}
-    <a class="btn btn-primary" href="{% url 'booking:doctor_search' %}">Find a doctor and book</a>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-primary" href="{% url 'booking:doctor_search' %}">Find a doctor and book</a>
+      <a class="btn btn-outline-primary" href="{% url 'booking:my_appointments' %}">My appointments</a>
+    </div>
   {% endif %}
   {% if user.role == "doctor" %}
     <a class="btn btn-primary" href="{% url 'scheduling:availability' %}">My weekly availability</a>

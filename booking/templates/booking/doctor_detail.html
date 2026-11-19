@@ -5,18 +5,21 @@
   <p class="text-muted">{{ doctor.specialty }} &middot; Room {{ doctor.room }}</p>
   <div class="alert alert-warning">If this is an emergency, call 999 or go to the nearest hospital.</div>
   <h2 class="h5 mb-3">Free times in the next 14 days</h2>
+  {% if not is_patient %}
+    <p class="text-muted small">Click any time below to log in with your mobile number and book.</p>
+  {% endif %}
   {% for day, slots in days %}
     <div class="mb-3">
       <strong>{{ day|date:"l, j F" }}</strong>
       <div class="d-flex flex-wrap gap-2 mt-2">
         {% for slot in slots %}
-          <span class="badge text-bg-light border fs-6 fw-normal">{{ slot.0|time:"H:i" }}</span>
+          <a class="btn btn-outline-primary btn-sm" href="{% url 'booking:book_slot' doctor.pk %}?slot={{ slot.0.isoformat|urlencode }}">{{ slot.0|time:"H:i" }}</a>
         {% endfor %}
       </div>
     </div>
   {% empty %}
     <p>There are no free times in the next 14 days. Please check again later, or call the clinic.</p>
   {% endfor %}
-  <p class="text-muted small mt-4">All times are Dhaka time. Online booking opens soon; for now, call the clinic to book one of these times.</p>
+  <p class="text-muted small mt-4">All times are Dhaka time.</p>
   <a href="{% url 'booking:doctor_search' %}">&larr; Back to search</a>
 {% endblock %}
