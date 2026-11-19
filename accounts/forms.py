@@ -66,3 +66,43 @@ class StaffAccountForm(forms.Form):
         widget=forms.PasswordInput,
         help_text="The person must replace this password the first time they log in.",
     )
+
+
+class PatientRegistrationRequestForm(forms.Form):
+    """Step 1 of patient registration: enter name, mobile number, and DOB (AUTH-01)."""
+
+    full_name = forms.CharField(
+        max_length=150,
+        label="Full name",
+    )
+    mobile_number = forms.CharField(
+        max_length=17,
+        label="Mobile number",
+        help_text="Enter your Bangladeshi mobile number, for example +8801712345678.",
+    )
+    date_of_birth = forms.DateField(
+        required=False,
+        label="Date of birth (optional)",
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+
+
+class PatientLoginRequestForm(forms.Form):
+    """Step 1 of patient login: enter registered mobile number to receive OTP (AUTH-02)."""
+
+    mobile_number = forms.CharField(
+        max_length=17,
+        label="Mobile number",
+        help_text="Enter your registered mobile number, for example +8801712345678.",
+    )
+
+
+class OtpVerificationForm(forms.Form):
+    """Step 2 of patient registration or login: enter the 6-digit SMS code (AUTH-01, AUTH-02)."""
+
+    code = forms.CharField(
+        max_length=10,
+        min_length=6,
+        label="6-digit verification code",
+        help_text="Enter the 6-digit code sent to your mobile number. It expires in 5 minutes.",
+    )

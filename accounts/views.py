@@ -1,6 +1,7 @@
 """Pages for the accounts application."""
-
+import time
 from django.contrib import messages
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import (
     LoginView,
@@ -13,12 +14,36 @@ from django.contrib.auth.views import (
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import ClinicLoginForm, StaffAccountForm
+from .forms import (
+    ClinicLoginForm,
+    OtpVerificationForm,
+    PatientLoginRequestForm,
+    PatientRegistrationRequestForm,
+    StaffAccountForm,
+)
+from .middleware import LAST_ACTIVITY_SESSION_KEY
 from .models import User
+from .patients import normalize_mobile_number
 from .permissions import role_required
 from .services import STAFF_ROLES, create_staff_account, deactivate_staff_account
+from .services.patient_auth import (
+    complete_registration_with_otp,
+    request_login_otp,
+    request_registration_otp,
+    verify_login_otp,
+)
+
+PENDING_REG_SESSION_KEY = "clinicq_pending_registration"
+PENDING_LOGIN_SESSION_KEY = "clinicq_pending_patient_login"
+
+
+def _sign_in_patient(request, user):
+    """Attach the authenticated patient user to the session (AUTH-01, AUTH-02)."""
+    login(request, user, backend="accounts.backends.EmailOrUsernameBackend")
+    request.session[LAST_ACTIVITY_SESSION_KEY] = time.time()
 
 
 class ClinicLoginView(LoginView):
@@ -83,6 +108,133 @@ class ClinicPasswordResetCompleteView(PasswordResetCompleteView):
     """Confirm that the password was changed (AUTH-06)."""
 
     template_name = "accounts/password_reset_complete.html"
+
+
+def patient_register(request):
+    """Step 1 of patient self-registration: collect details and send OTP (AUTH-01)."""
+    if request.user.is_authenticated:
+        return redirect("accounts:home")
+
+    form = PatientRegistrationRequestForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        data = form.cleaned_data
+        try:
+            challenge = request_registration_otp(data["mobile_number"])
+        except ValidationError as error:
+            for message in error.messages:
+                form.add_error(None, message)
+        else:
+            dob = data["date_of_birth"]
+            request.session[PENDING_REG_SESSION_KEY] = {
+                "full_name": data["full_name"].strip(),
+                "mobile_number": challenge.mobile_number,
+                "date_of_birth": dob.isoformat() if dob else None,
+            }
+            messages.success(
+                request,
+                f"We sent a 6-digit verification code to {challenge.mobile_number}.",
+            )
+            return redirect("accounts:patient_register_verify")
+
+    return render(request, "accounts/patient_register.html", {"form": form})
+
+
+def patient_register_verify(request):
+    """Step 2 of patient self-registration: verify OTP and log in (AUTH-01)."""
+    if request.user.is_authenticated:
+        return redirect("accounts:home")
+
+    pending = request.session.get(PENDING_REG_SESSION_KEY)
+    if not pending:
+        messages.info(request, "Please enter your details first to receive a code.")
+        return redirect("accounts:patient_register")
+
+    form = OtpVerificationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        from datetime import date
+
+        dob_raw = pending.get("date_of_birth")
+        dob = date.fromisoformat(dob_raw) if dob_raw else None
+        try:
+            user = complete_registration_with_otp(
+                full_name=pending["full_name"],
+                mobile_number=pending["mobile_number"],
+                entered_code=form.cleaned_data["code"],
+                date_of_birth=dob,
+            )
+        except ValidationError as error:
+            for message in error.messages:
+                form.add_error(None, message)
+        else:
+            request.session.pop(PENDING_REG_SESSION_KEY, None)
+            _sign_in_patient(request, user)
+            messages.success(request, "Your patient account is ready and you are logged in.")
+            return redirect("accounts:home")
+
+    return render(
+        request,
+        "accounts/patient_register_verify.html",
+        {"form": form, "mobile_number": pending["mobile_number"]},
+    )
+
+
+def patient_login(request):
+    """Step 1 of patient login: ask for mobile number and send OTP (AUTH-02)."""
+    if request.user.is_authenticated:
+        return redirect("accounts:home")
+
+    form = PatientLoginRequestForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        raw_number = form.cleaned_data["mobile_number"]
+        try:
+            challenge = request_login_otp(raw_number)
+        except ValidationError as error:
+            for message in error.messages:
+                form.add_error(None, message)
+        else:
+            request.session[PENDING_LOGIN_SESSION_KEY] = normalize_mobile_number(
+                challenge.mobile_number
+            )
+            messages.success(
+                request,
+                f"We sent a 6-digit login code to {challenge.mobile_number}.",
+            )
+            return redirect("accounts:patient_login_verify")
+
+    return render(request, "accounts/patient_login.html", {"form": form})
+
+
+def patient_login_verify(request):
+    """Step 2 of patient login: verify OTP and open the patient dashboard (AUTH-02)."""
+    if request.user.is_authenticated:
+        return redirect("accounts:home")
+
+    mobile_number = request.session.get(PENDING_LOGIN_SESSION_KEY)
+    if not mobile_number:
+        messages.info(request, "Enter your mobile number first to receive a login code.")
+        return redirect("accounts:patient_login")
+
+    form = OtpVerificationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            user = verify_login_otp(
+                mobile_number=mobile_number,
+                entered_code=form.cleaned_data["code"],
+            )
+        except ValidationError as error:
+            for message in error.messages:
+                form.add_error(None, message)
+        else:
+            request.session.pop(PENDING_LOGIN_SESSION_KEY, None)
+            _sign_in_patient(request, user)
+            messages.success(request, "You are now logged in.")
+            return redirect("accounts:home")
+
+    return render(
+        request,
+        "accounts/patient_login_verify.html",
+        {"form": form, "mobile_number": mobile_number},
+    )
 
 
 @login_required
