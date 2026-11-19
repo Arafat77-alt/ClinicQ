@@ -20,3 +20,15 @@ class ReceptionBookingForm(forms.Form):
 
     slot_start = forms.CharField()
     reason = forms.CharField(max_length=255, required=False, label="Reason for the visit")
+
+
+class PatientBookingForm(forms.Form):
+    """The chosen patient (self or dependent), time slot, and optional reason (BKG-03)."""
+
+    patient_id = forms.IntegerField(widget=forms.HiddenInput())
+    slot_start = forms.CharField(widget=forms.HiddenInput())
+    reason = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Reason for the visit (optional)",
+    )

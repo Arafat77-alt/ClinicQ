@@ -135,9 +135,12 @@
 <body>
   <nav class="navbar navbar-dark cq-navbar mb-4">
     <div class="container">
-            <div class="d-flex align-items-center gap-4">
+      <div class="d-flex align-items-center gap-4">
         <a class="navbar-brand m-0" href="{% url 'accounts:home' %}">ClinicQ</a>
         <a class="text-white text-decoration-none" href="{% url 'booking:doctor_search' %}">Find a doctor</a>
+        {% if user.is_authenticated and user.role == "patient" %}
+          <a class="text-white text-decoration-none" href="{% url 'booking:my_appointments' %}">My appointments</a>
+        {% endif %}
       </div>
 
       {% if user.is_authenticated %}
