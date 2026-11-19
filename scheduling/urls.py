@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from . import views
+from . import profile_views, views
 
 app_name = "scheduling"
 
@@ -14,4 +14,13 @@ urlpatterns = [
     path("availability/breaks/<int:break_id>/delete/", views.break_delete, name="break_delete"),
     path("leave/", views.leave_list, name="leave_list"),
     path("leave/<int:leave_id>/delete/", views.leave_delete, name="leave_delete"),
+    path("doctors/", profile_views.doctor_list, name="doctor_list"),
+    path("doctors/new/", profile_views.doctor_create, name="doctor_create"),
+    path("doctors/<int:doctor_id>/edit/", profile_views.doctor_edit, name="doctor_edit"),
+    path("doctors/<int:doctor_id>/delete/", profile_views.doctor_delete, name="doctor_delete"),
+    path(
+        "doctors/<int:doctor_id>/deactivate/",
+        profile_views.doctor_deactivate,
+        name="doctor_deactivate",
+    ),
 ]
