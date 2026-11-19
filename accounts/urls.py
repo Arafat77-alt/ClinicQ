@@ -11,6 +11,18 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("login/", views.ClinicLoginView.as_view(), name="login"),
     path("logout/", LogoutView.as_view(), name="logout"),
+    path("patient/register/", views.patient_register, name="patient_register"),
+    path(
+        "patient/register/verify/",
+        views.patient_register_verify,
+        name="patient_register_verify",
+    ),
+    path("patient/login/", views.patient_login, name="patient_login"),
+    path(
+        "patient/login/verify/",
+        views.patient_login_verify,
+        name="patient_login_verify",
+    ),
     path("password/change/", views.FirstPasswordChangeView.as_view(), name="password_change"),
     path("password/reset/", views.ClinicPasswordResetView.as_view(), name="password_reset"),
     path(
