@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Confirm booking - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-1">Confirm your appointment</h1>
+  <p class="text-muted mb-4">
+    Dr. {{ doctor.user.get_full_name|default:doctor.user.username }} &middot;
+    {{ doctor.specialty }} &middot; Room {{ doctor.room }}
+  </p>
+
+  {% if selected_slot %}
+    <div class="alert alert-info">
+      <strong>Selected time:</strong> {{ selected_slot|date:"l, j F Y" }} at {{ selected_slot|time:"H:i" }} (Dhaka time)
+    </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {{ form.slot_start }}
+
+    <div>
+      <label for="id_patient_id">Who is this appointment for?</label>
+      <select name="patient_id" id="id_patient_id" class="form-select">
+        {% for p in patients %}
+          <option value="{{ p.pk }}" {% if form.patient_id.value|stringformat:"s" == p.pk|stringformat:"s" %}selected{% endif %}>
+            {{ p.full_name }}{% if p.guardian_id %} (Dependent){% else %} (Myself){% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
+      {{ form.reason.errors }}
+      {{ form.reason }}
+    </div>
+
+    <div class="d-flex gap-2 align-items-center">
+      <button type="submit" class="btn btn-primary">Confirm booking</button>
+      <a class="btn btn-outline-secondary" href="{% url 'booking:doctor_detail' doctor.pk %}">Choose another time</a>
+    </div>
+  </form>
+{% endblock %}

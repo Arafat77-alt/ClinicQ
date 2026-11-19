@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}My appointments - ClinicQ{% endblock %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <h1 class="h3 mb-0">My appointments</h1>
+    <a class="btn btn-primary" href="{% url 'booking:doctor_search' %}">Book an appointment</a>
+  </div>
+
+  <h2 class="h5 mb-3">Upcoming appointments</h2>
+  {% if upcoming %}
+    <div class="table-responsive mb-4">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Ref</th>
+            <th>Date &amp; time</th>
+            <th>Doctor</th>
+            <th>Patient</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for appt in upcoming %}
+            <tr>
+              <td><strong>{{ appt.reference_number }}</strong></td>
+              <td>
+                {% if appt.slot_start %}
+                  {{ appt.slot_start|date:"D, j M Y" }}<br>
+                  <span class="text-muted small">{{ appt.slot_start|time:"H:i" }} &ndash; {{ appt.slot_end|time:"H:i" }}</span>
+                {% else %}
+                  Walk-in
+                {% endif %}
+              </td>
+              <td>
+                Dr. {{ appt.doctor.user.get_full_name|default:appt.doctor.user.username }}<br>
+                <span class="text-muted small">{{ appt.doctor.specialty }} &middot; Room {{ appt.doctor.room }}</span>
+              </td>
+              <td>
+                {{ appt.patient.full_name }}
+                {% if appt.patient.guardian_id %}<span class="badge text-bg-light border">Dependent</span>{% endif %}
+              </td>
+              <td><span class="badge text-bg-success">{{ appt.get_status_display }}</span></td>
+              <td>
+                {% if appt.can_patient_cancel %}
+                  <form method="post" action="{% url 'booking:cancel_appointment' appt.pk %}" class="m-0">
+                    {% csrf_token %}
+                    <button
+                      type="submit"
+                      class="btn btn-outline-danger btn-sm"
+                      onclick="return confirm('Cancel appointment {{ appt.reference_number }}?');"
+                    >
+                      Cancel
+                    </button>
+                  </form>
+                {% else %}
+                  <span class="text-muted small">Call clinic to change</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-muted mb-4">You have no upcoming appointments.</p>
+  {% endif %}
+
+  <h2 class="h5 mb-3">Past &amp; cancelled appointments</h2>
+  {% if past %}
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Ref</th>
+            <th>Date &amp; time</th>
+            <th>Doctor</th>
+            <th>Patient</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for appt in past %}
+            <tr>
+              <td>{{ appt.reference_number }}</td>
+              <td>
+                {% if appt.slot_start %}
+                  {{ appt.slot_start|date:"D, j M Y" }}, {{ appt.slot_start|time:"H:i" }}
+                {% else %}
+                  Walk-in
+                {% endif %}
+              </td>
+              <td>Dr. {{ appt.doctor.user.get_full_name|default:appt.doctor.user.username }}</td>
+              <td>{{ appt.patient.full_name }}</td>
+              <td>
+                <span class="badge {% if appt.status == 'cancelled' %}text-bg-secondary{% else %}text-bg-light border{% endif %}">
+                  {{ appt.get_status_display }}
+                </span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-muted mb-0">No past appointments yet.</p>
+  {% endif %}
+{% endblock %}
