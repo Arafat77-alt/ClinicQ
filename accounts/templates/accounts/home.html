@@ -17,6 +17,7 @@
     <a class="btn btn-primary" href="{% url 'reception_queue:board' %}">My queue today</a>
   {% endif %}
   {% if user.role == "receptionist" %}
+    <a class="btn btn-primary" href="{% url 'reception_queue:check_in' %}">Check in a patient</a>
     <a class="btn btn-primary" href="{% url 'booking:reception_start' %}">Book an appointment by phone</a>
     <a class="btn btn-primary" href="{% url 'reception_queue:walk_in' %}">Register a walk-in</a>
     <a class="btn btn-primary" href="{% url 'reception_queue:board' %}">Today's queues</a>
