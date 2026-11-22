@@ -13,4 +13,8 @@ app_name = "reception_queue"
 urlpatterns = [
     path("walk-in/", reception_views.walk_in, name="walk_in"),
     path("walk-in/<int:entry_id>/", reception_views.walk_in_done, name="walk_in_done"),
+    path("today/", reception_views.board, name="board"),
+    path("entry/<int:entry_id>/emergency/", reception_views.emergency, name="emergency"),
+    path("entry/<int:entry_id>/remove/", reception_views.remove, name="remove"),
+    path("entry/<int:entry_id>/return/", reception_views.return_entry, name="return"),
 ]
