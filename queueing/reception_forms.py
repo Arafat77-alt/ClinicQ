@@ -38,3 +38,14 @@ class WalkInForm(forms.Form):
         self.fields["doctor"].queryset = (
             Doctor.objects.filter(is_active=True).select_related("user").order_by("code")
         )
+
+
+class ReasonForm(forms.Form):
+    """A required reason, for an emergency or a removal (QUE-09, QUE-10)."""
+
+    reason = forms.CharField(
+        max_length=255,
+        label="Reason",
+        widget=forms.Textarea(attrs={"rows": 3}),
+        error_messages={"required": "A reason is required. Write it in a few words."},
+    )

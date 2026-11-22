@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }} - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-1">{{ heading }}</h1>
+  <p class="mb-1">
+    Token <strong>{{ entry.token }}</strong> &middot; {{ entry.appointment.patient.full_name }}
+    &middot; Dr. {{ entry.doctor.user.get_full_name|default:entry.doctor.user.username }}
+  </p>
+  <p class="text-muted">{{ explanation }}</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}</div>
+    {% endif %}
+    {{ form.as_div }}
+    <div class="d-flex flex-wrap gap-2">
+      <button type="submit" class="btn {{ button_class }}">{{ button }}</button>
+      <a class="btn btn-outline-secondary" href="{% url 'reception_queue:board' %}">Cancel</a>
+    </div>
+  </form>
+{% endblock %}
