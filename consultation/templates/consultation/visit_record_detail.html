@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Visit record - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-1">Visit of {{ record.created_at|date:"j M Y, H:i" }}</h1>
+  <p class="text-muted">
+    {{ record.patient.full_name }} &middot; written by Dr. {{ record.doctor.user.get_full_name|default:record.doctor.user.username }} ({{ record.doctor.code }})
+  </p>
+  <dl>
+    <dt>Complaint</dt><dd>{{ record.complaint|default:"Not written"|linebreaksbr }}</dd>
+    <dt>Findings</dt><dd>{{ record.findings|default:"Not written"|linebreaksbr }}</dd>
+    <dt>Diagnosis</dt><dd>{{ record.diagnosis|default:"Not written"|linebreaksbr }}</dd>
+    <dt>Advice</dt><dd>{{ record.advice|default:"Not written"|linebreaksbr }}</dd>
+  </dl>
+  <a href="javascript:history.back()">&larr; Back</a>
+{% endblock %}
