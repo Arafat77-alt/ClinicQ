@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Register a walk-in - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-1">Register a walk-in patient</h1>
+  <p class="text-muted">Fill in the details and choose a doctor. The patient gets the next token in that doctor's queue today.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}</div>
+    {% endif %}
+    {{ form.as_div }}
+    <button type="submit" class="btn btn-primary">Add to the queue</button>
+  </form>
+  <p class="mt-3 mb-0"><a href="{% url 'accounts:home' %}">&larr; Back to home</a></p>
+{% endblock %}
