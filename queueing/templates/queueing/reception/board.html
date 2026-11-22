@@ -36,6 +36,9 @@
         <strong>With the doctor:</strong>
         {% if queue.current %}
           {{ queue.current.token }} &middot; {{ queue.current.appointment.patient.full_name }} ({{ queue.current.get_state_display }})
+          {% if user.role == "doctor" and queue.current.state == "in_consultation" %}
+            <a class="btn btn-sm btn-primary ms-2" href="{% url 'consultation:visit_notes' queue.current.pk %}">Write visit notes</a>
+          {% endif %}
         {% else %}
           nobody
         {% endif %}
