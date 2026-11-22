@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Today's schedule - ClinicQ{% endblock %}
+{% block content %}
+  <style>
+    /* SYS-04: on paper, hide the screen-only parts and start every doctor on a new sheet. */
+    .cq-sheet + .cq-sheet { margin-top: 2rem; padding-top: 1.5rem; border-top: 2px dashed #b7c9c7; }
+    .cq-sheet table { display: table; width: 100%; }
+    @media print {
+      @page { size: A4; margin: 12mm; }
+      body, html { background: #ffffff !important; }
+      .cq-navbar, .cq-no-print, .alert { display: none !important; }
+      main.container { max-width: none !important; padding: 0 !important; }
+      .cq-card { box-shadow: none !important; padding: 0 !important; overflow: visible !important; }
+      .cq-sheet { break-after: page; page-break-after: always; }
+      .cq-sheet:last-child { break-after: auto; page-break-after: auto; }
+      .cq-sheet + .cq-sheet { margin-top: 0; padding-top: 0; border-top: 0; }
+      .cq-sheet tr { break-inside: avoid; page-break-inside: avoid; }
+      .cq-sheet th, .cq-sheet td { padding: 0.35rem 0.4rem !important; font-size: 11pt; }
+    }
+  </style>
+
+  <div class="cq-no-print mb-4">
+    <h1 class="h3 mb-2">Today's schedule</h1>
+    <p class="mb-3">
+      Click <strong>Print</strong> to get one page for each doctor. Keep the pages at the
+      front desk, so the clinic can keep working if the system or the internet stops.
+    </p>
+    <div class="d-flex flex-wrap gap-2">
+      <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
+      <a class="btn btn-outline-secondary" href="{% url 'accounts:home' %}">Back to home</a>
+    </div>
+  </div>
+
+  {% for doctor, appointments in schedule %}
+    <section class="cq-sheet">
+      <h2 class="h4 mb-1">Dr. {{ doctor.user.get_full_name|default:doctor.user.username }} ({{ doctor.code }})</h2>
+      <p class="text-muted mb-2">
+        {{ doctor.specialty }} &middot; Room {{ doctor.room }} &middot; {{ today|date:"l, j F Y" }}
+        &middot; {{ appointments|length }} appointment{{ appointments|length|pluralize }}
+      </p>
+      {% if appointments %}
+        <table class="table table-sm table-bordered align-middle">
+          <thead>
+            <tr><th>Time</th><th>Patient</th><th>Phone</th><th>Status</th><th>Reference</th></tr>
+          </thead>
+          <tbody>
+            {% for appointment in appointments %}
+              <tr>
+                <td>{% if appointment.slot_start %}{{ appointment.slot_start|time:"H:i" }}{% else %}Walk-in{% endif %}</td>
+                <td>{{ appointment.patient.full_name }}</td>
+                <td>{{ appointment.patient.mobile_number }}</td>
+                <td>{{ appointment.get_status_display }}</td>
+                <td>{{ appointment.reference_number }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="border rounded-3 p-3">No appointments for this doctor today.</p>
+      {% endif %}
+      <p class="small text-muted mb-0">Printed {{ printed_at|date:"j M Y, H:i" }} from ClinicQ.</p>
+    </section>
+  {% empty %}
+    <p>There are no active doctors yet. Ask the clinic administrator to add doctors.</p>
+  {% endfor %}
+{% endblock %}
