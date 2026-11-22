@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Today's queues - ClinicQ{% endblock %}
+{% block content %}
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 m-0">{% if user.role == "doctor" %}My queue today{% else %}Today's queues{% endif %}</h1>
+    <div class="d-flex flex-wrap gap-2">
+      {% if user.role == "receptionist" %}
+        <a class="btn btn-primary" href="{% url 'reception_queue:walk_in' %}">Register a walk-in</a>
+      {% endif %}
+      <a class="btn btn-outline-secondary" href="{% url 'reception_queue:board' %}">Refresh</a>
+    </div>
+  </div>
+  <p class="text-muted small">This page refreshes by itself every 30 seconds.</p>
+
+  {% if no_profile %}
+    <p>Your account has no doctor profile yet. Ask the clinic administrator to add one.</p>
+  {% endif %}
+
+  {% for queue in board %}
+    <section class="mb-4 {% if not forloop.first %}pt-3 border-top{% endif %}">
+      <h2 class="h5 mb-2">
+        {{ queue.doctor.code }} &middot; Dr. {{ queue.doctor.user.get_full_name|default:queue.doctor.user.username }}
+        <span class="text-muted fw-normal">&middot; Room {{ queue.doctor.room }}</span>
+      </h2>
+
+      {% if queue.alerts %}
+        <div class="alert alert-danger" role="alert">
+          <strong>Emergency:</strong>
+          {% for entry in queue.alerts %}
+            token {{ entry.token }} ({{ entry.appointment.patient.full_name }}) &mdash; {{ entry.emergency_reason }}{% if not forloop.last %};{% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <p class="mb-2">
+        <strong>With the doctor:</strong>
+        {% if queue.current %}
+          {{ queue.current.token }} &middot; {{ queue.current.appointment.patient.full_name }} ({{ queue.current.get_state_display }})
+        {% else %}
+          nobody
+        {% endif %}
+      </p>
+
+      {% if queue.waiting %}
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr><th>#</th><th>Token</th><th>Patient</th><th>Waiting since</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {% for entry in queue.waiting %}
+              <tr {% if entry.is_emergency %}class="table-danger"{% endif %}>
+                <td>{{ forloop.counter }}</td>
+                <td><strong>{{ entry.token }}</strong>{% if entry.is_emergency %} <span class="badge text-bg-danger">Emergency</span>{% endif %}</td>
+                <td>
+                  {{ entry.appointment.patient.full_name }}{% if entry.appointment.patient.age is not None %}, {{ entry.appointment.patient.age }}{% endif %}
+                  <div class="small text-muted">
+                    {{ entry.appointment.get_type_display }}{% if entry.appointment.reason %} &middot; {{ entry.appointment.reason }}{% endif %}
+                    {% if entry.is_emergency %}<br>Emergency: {{ entry.emergency_reason }} (by {{ entry.emergency_flagged_by.get_full_name|default:entry.emergency_flagged_by.username }}, {{ entry.emergency_flagged_at|time:"H:i" }}){% endif %}
+                  </div>
+                </td>
+                <td>{{ entry.check_in_time|time:"H:i" }}</td>
+                <td>
+                  <div class="d-flex flex-wrap gap-1">
+                    {% if not entry.is_emergency %}
+                      <a class="btn btn-sm btn-outline-danger" href="{% url 'reception_queue:emergency' entry.pk %}">Emergency</a>
+                    {% endif %}
+                    {% if user.role == "receptionist" %}
+                      <a class="btn btn-sm btn-outline-secondary" href="{% url 'reception_queue:remove' entry.pk %}">Remove</a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-muted">Nobody is waiting.</p>
+      {% endif %}
+
+      {% if queue.to_decide %}
+        <h3 class="h6 mt-3">Reception to decide (skipped twice)</h3>
+        {% for entry in queue.to_decide %}
+          <div class="border rounded-3 p-2 mb-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div><strong>{{ entry.token }}</strong> &middot; {{ entry.appointment.patient.full_name }} &middot; skipped {{ entry.skip_count }} times</div>
+            {% if user.role == "receptionist" %}
+              <div class="d-flex flex-wrap gap-1">
+                <form method="post" action="{% url 'reception_queue:return' entry.pk %}" class="m-0">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-primary">Return to the queue</button>
+                </form>
+                <a class="btn btn-sm btn-outline-danger" href="{% url 'reception_queue:remove' entry.pk %}">Remove</a>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% endif %}
+    </section>
+  {% empty %}
+    {% if not no_profile %}<p>There are no active doctors yet.</p>{% endif %}
+  {% endfor %}
+
+  <script>
+    // QUE-09: keep the alerts fresh without anyone pressing Refresh.
+    setTimeout(function () { window.location.reload(); }, 30000);
+  </script>
+{% endblock %}
