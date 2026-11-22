@@ -49,3 +49,14 @@ class ReasonForm(forms.Form):
         widget=forms.Textarea(attrs={"rows": 3}),
         error_messages={"required": "A reason is required. Write it in a few words."},
     )
+
+
+class CheckInSearchForm(forms.Form):
+    """Find a patient's appointment for check-in (QUE-01, USAB-03)."""
+
+    query = forms.CharField(
+        max_length=100,
+        label="Reference number, mobile number or name",
+        help_text="For example CQ-7K4M9XPA, 01712345678, or part of the patient's name.",
+        error_messages={"required": "Enter a reference number, mobile number or name."},
+    )

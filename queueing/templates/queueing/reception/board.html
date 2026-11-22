@@ -5,6 +5,7 @@
     <h1 class="h3 m-0">{% if user.role == "doctor" %}My queue today{% else %}Today's queues{% endif %}</h1>
     <div class="d-flex flex-wrap gap-2">
       {% if user.role == "receptionist" %}
+        <a class="btn btn-primary" href="{% url 'reception_queue:check_in' %}">Check in a patient</a>
         <a class="btn btn-primary" href="{% url 'reception_queue:walk_in' %}">Register a walk-in</a>
       {% endif %}
       <a class="btn btn-outline-secondary" href="{% url 'reception_queue:board' %}">Refresh</a>

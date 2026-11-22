@@ -13,7 +13,9 @@ from .models import QueueEntry
 
 # BR-05: a patient who checks in by slot start + 15 minutes keeps appointment
 # priority. These become clinic settings that the administrator can change (SCH-04).
+CHECK_IN_OPENS_MINUTES = 60
 GRACE_MINUTES = 15
+NO_SHOW_AFTER_MINUTES = 60
 
 TOKEN_RETRIES = 5
 

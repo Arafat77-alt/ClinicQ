@@ -31,7 +31,7 @@ def live_status(request, appointment_id):
     status = build_live_queue_status(entry)
     return render(
         request,
-        "queueing/live_status.html",
+        "queueing/reception/live_status.html",
         {"entry": entry, "status": status},
     )
 

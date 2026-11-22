@@ -11,6 +11,13 @@ from . import reception_views
 app_name = "reception_queue"
 
 urlpatterns = [
+    path("check-in/", reception_views.check_in, name="check_in"),
+    path(
+        "check-in/<int:appointment_id>/",
+        reception_views.check_in_appointment,
+        name="check_in_appointment",
+    ),
+    path("check-in/<int:entry_id>/done/", reception_views.check_in_done, name="check_in_done"),
     path("walk-in/", reception_views.walk_in, name="walk_in"),
     path("walk-in/<int:entry_id>/", reception_views.walk_in_done, name="walk_in_done"),
     path("today/", reception_views.board, name="board"),
