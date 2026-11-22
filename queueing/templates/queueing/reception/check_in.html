@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Check in a patient - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-1">Check in a patient</h1>
+  <p class="text-muted">Find today's booked appointment, then check the patient in to give them a token.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}</div>
+    {% endif %}
+    {{ form.as_div }}
+    <button type="submit" class="btn btn-primary">Find appointment</button>
+  </form>
+  {% if searched and appointments %}
+    <h2 class="h5 mt-4 mb-2">Appointments found</h2>
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Doctor</th>
+            <th>Time</th>
+            <th>Reference</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for appointment in appointments %}
+            <tr>
+              <td>
+                {{ appointment.patient.full_name }}<br>
+                <span class="text-muted">{{ appointment.patient.mobile_number }}</span>
+              </td>
+              <td>
+                {{ appointment.doctor.code }} - Dr. {{ appointment.doctor.user.get_full_name|default:appointment.doctor.user.username }}<br>
+                <span class="text-muted">Room {{ appointment.doctor.room }}</span>
+              </td>
+              <td>{{ appointment.slot_start|time:"H:i" }}</td>
+              <td><code>{{ appointment.reference_number }}</code></td>
+              <td>
+                <form method="post" action="{% url 'reception_queue:check_in_appointment' appointment.pk %}" class="m-0">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-primary">Check in</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+  <p class="mt-3 mb-0">
+    Past the no-show time?
+    <a href="{% url 'reception_queue:walk_in' %}">Register the patient as a walk-in</a>.
+  </p>
+  <p class="mb-0"><a href="{% url 'accounts:home' %}">&larr; Back to home</a></p>
+{% endblock %}
