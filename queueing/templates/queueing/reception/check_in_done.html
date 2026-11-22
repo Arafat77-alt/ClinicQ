@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Token {{ entry.token }} - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-3">The patient is in the queue</h1>
+  <div class="text-center border rounded-3 p-4 mb-3">
+    <div class="text-muted">Token</div>
+    <div class="display-4 fw-bold" style="color: var(--cq-primary-dark);">{{ entry.token }}</div>
+    <div>Dr. {{ entry.doctor.user.get_full_name|default:entry.doctor.user.username }} &middot; Room {{ entry.doctor.room }}</div>
+  </div>
+  <p>
+    <strong>{{ entry.appointment.patient.full_name }}</strong> ({{ entry.appointment.patient.mobile_number }}).
+    {% if ahead %}{{ ahead }} patient{{ ahead|pluralize }} waiting ahead.{% else %}Nobody is waiting ahead.{% endif %}
+    Tell the patient their token and the room number.
+  </p>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-primary" href="{% url 'reception_queue:check_in' %}">Check in another patient</a>
+    <a class="btn btn-outline-secondary" href="{% url 'accounts:home' %}">Back to home</a>
+  </div>
+{% endblock %}

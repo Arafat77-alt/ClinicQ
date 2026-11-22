@@ -1,4 +1,4 @@
-"""Pages the receptionist uses to manage today's queues (QUE-03, QUE-09, QUE-10)."""
+"""Pages the receptionist uses to manage today's queues (QUE-01, QUE-03, QUE-09, QUE-10)."""
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -7,10 +7,12 @@ from django.views.decorators.http import require_POST
 
 from accounts.models import User
 from accounts.permissions import role_required
+from booking.models import Appointment
 
+from .checkin import check_in_booked_appointment, find_appointments_for_check_in
 from .models import QueueEntry
 from .queue_actions import flag_emergency, queue_board, remove_from_queue, return_to_queue
-from .reception_forms import ReasonForm, WalkInForm
+from .reception_forms import CheckInSearchForm, ReasonForm, WalkInForm
 from .services import patients_ahead
 from .walkin import find_or_create_walk_in_patient, register_walk_in
 
@@ -49,6 +51,63 @@ def walk_in_done(request, entry_id):
     return render(
         request,
         "queueing/reception/walk_in_done.html",
+        {"entry": entry, "ahead": patients_ahead(entry)},
+    )
+
+
+@role_required(User.Role.RECEPTIONIST)
+def check_in(request):
+    """Find a booked patient's appointment for check-in (QUE-01, USAB-03)."""
+    form = CheckInSearchForm(request.POST if request.method == "POST" else None)
+    appointments = []
+    searched = False
+    if request.method == "POST" and form.is_valid():
+        appointments = find_appointments_for_check_in(form.cleaned_data["query"])
+        searched = True
+        if not appointments:
+            form.add_error(
+                None,
+                "No appointment was found for today. Check the reference number or mobile "
+                "number, or register the patient as a walk-in.",
+            )
+    return render(
+        request,
+        "queueing/reception/check_in.html",
+        {"form": form, "appointments": appointments, "searched": searched},
+    )
+
+
+@role_required(User.Role.RECEPTIONIST)
+@require_POST
+def check_in_appointment(request, appointment_id):
+    """Check in the selected appointment and give the patient a token (QUE-01)."""
+    appointment = get_object_or_404(Appointment, pk=appointment_id)
+    try:
+        entry, was_late = check_in_booked_appointment(appointment)
+    except ValidationError as error:
+        for message in error.messages:
+            messages.error(request, message)
+        return redirect("reception_queue:check_in")
+    if was_late:
+        messages.info(
+            request,
+            "Late arrival: the patient keeps the appointment and joins the queue from "
+            "the check-in time, not the original slot time.",
+        )
+    else:
+        messages.success(request, "The patient is checked in and in the queue.")
+    return redirect("reception_queue:check_in_done", entry_id=entry.pk)
+
+
+@role_required(User.Role.RECEPTIONIST)
+def check_in_done(request, entry_id):
+    """Show the token issued at check-in so the receptionist can tell the patient (BR-14)."""
+    entry = get_object_or_404(
+        QueueEntry.objects.select_related("doctor__user", "appointment__patient"), pk=entry_id
+    )
+    return render(
+        request,
+        "queueing/reception/check_in_done.html",
         {"entry": entry, "ahead": patients_ahead(entry)},
     )
 
