@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Doctor profiles - ClinicQ{% endblock %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="h3 m-0">Doctor profiles</h1>
+    <a class="btn btn-primary" href="{% url 'scheduling:doctor_create' %}">Add doctor profile</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Doctor</th>
+          <th>Specialty</th>
+          <th>Room</th>
+          <th>Slot (min)</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in doctors %}
+          <tr>
+            <td><strong>{{ doc.code }}</strong></td>
+            <td>{{ doc.user.get_full_name|default:doc.user.username }}</td>
+            <td>{{ doc.specialty }}</td>
+            <td>{{ doc.room }}</td>
+            <td>{{ doc.default_slot_minutes }}</td>
+            <td>{% if doc.is_active %}Active{% else %}Deactivated{% endif %}</td>
+            <td class="d-flex gap-2 flex-wrap">
+              <a class="btn btn-outline-secondary btn-sm" href="{% url 'scheduling:doctor_edit' doc.pk %}">Edit</a>
+              {% if doc.is_active %}
+                <a class="btn btn-outline-danger btn-sm" href="{% url 'scheduling:doctor_delete' doc.pk %}">Delete / Deactivate</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7">There are no doctor profiles yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
