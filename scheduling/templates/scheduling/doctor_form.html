@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{% if editing %}Edit doctor profile{% else %}Add doctor profile{% endif %} - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-3">{% if editing %}Edit doctor profile{% else %}Add doctor profile{% endif %}</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <div class="d-flex gap-2 flex-wrap mt-3">
+      <button type="submit" class="btn btn-primary">Save doctor profile</button>
+      <a class="btn btn-link" href="{% url 'scheduling:doctor_list' %}">Cancel</a>
+    </div>
+  </form>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Deactivate doctor - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-3">Deactivate {{ doctor }} instead of deleting</h1>
+  <div class="alert alert-warning">
+    <p class="mb-2">
+      <strong>Doctors cannot be permanently deleted</strong> because past and upcoming appointment records must be kept.
+    </p>
+    {% if future_count %}
+      <p class="mb-0">
+        This doctor currently has <strong>{{ future_count }}</strong> future active appointment(s).
+        Would you like to <strong>deactivate</strong> this doctor instead so no new appointments can be booked?
+      </p>
+    {% else %}
+      <p class="mb-0">
+        Would you like to <strong>deactivate</strong> this doctor instead so they no longer appear in patient search?
+      </p>
+    {% endif %}
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="d-flex gap-2 flex-wrap mt-3">
+      <button type="submit" class="btn btn-outline-danger">Deactivate doctor instead</button>
+      <a class="btn btn-link" href="{% url 'scheduling:doctor_list' %}">Cancel</a>
+    </div>
+  </form>
+{% endblock %}
