@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Visit notes - ClinicQ{% endblock %}
+{% block content %}
+  <h1 class="h3 mb-1">Visit notes</h1>
+  <p class="mb-3">
+    <strong>{{ patient.full_name }}</strong>{% if patient.age is not None %}, age {{ patient.age }}{% endif %}
+    &middot; token {{ entry.token }} &middot; {{ entry.get_state_display }}
+    {% if entry.appointment.reason %}<br><span class="text-muted">Reason for the visit: {{ entry.appointment.reason }}</span>{% endif %}
+  </p>
+  {% if record %}
+    <p class="small text-muted">
+      Written by Dr. {{ record.doctor.user.get_full_name|default:record.doctor.user.username }}
+      on {{ record.created_at|date:"j M Y, H:i" }}{% if record.updated_at != record.created_at %}, last changed {{ record.updated_at|date:"H:i" }}{% endif %}.
+      You can change your notes for 24 hours.
+    </p>
+  {% endif %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}</div>
+    {% endif %}
+    {{ form.as_div }}
+    <div class="d-flex flex-wrap gap-2">
+      <button type="submit" class="btn btn-primary">Save notes</button>
+      <a class="btn btn-outline-secondary" href="{% url 'reception_queue:board' %}">Back to my queue</a>
+    </div>
+  </form>
+
+  <h2 class="h5 mt-4">Earlier visits</h2>
+  {% for old in history %}
+    <div class="border rounded-3 p-2 mb-2">
+      <a href="{% url 'consultation:visit_record_detail' old.pk %}">{{ old.created_at|date:"j M Y" }}</a>
+      &middot; Dr. {{ old.doctor.user.get_full_name|default:old.doctor.user.username }}
+      {% if old.diagnosis %}&middot; {{ old.diagnosis|truncatechars:60 }}{% endif %}
+    </div>
+  {% empty %}
+    <p class="text-muted">No earlier visits recorded at this clinic.</p>
+  {% endfor %}
+{% endblock %}
