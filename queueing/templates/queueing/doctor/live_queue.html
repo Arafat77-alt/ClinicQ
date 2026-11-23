@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}My live queue - ClinicQ{% endblock %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h1 class="h3 mb-0">My live queue</h1>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'accounts:home' %}">Back to home</a>
+  </div>
+  {% if no_profile %}
+    <div class="alert alert-warning">{{ message }}</div>
+  {% else %}
+    <p class="text-muted">
+      Patients are shown in calling order. Emergencies are highlighted. This list updates every 3 seconds.
+    </p>
+    <div class="small text-muted mb-2">
+      Last updated: <span id="cq-queue-updated">{{ snapshot.updated_at }}</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Order</th>
+            <th scope="col">Token</th>
+            <th scope="col">Patient</th>
+            <th scope="col">Age</th>
+            <th scope="col">Reason</th>
+            <th scope="col">Waiting</th>
+          </tr>
+        </thead>
+        <tbody id="cq-queue-body">
+          {% for item in snapshot.entries %}
+            <tr{% if item.is_emergency %} class="table-danger"{% endif %}>
+              <td>{{ item.position }}</td>
+              <td><strong>{{ item.token }}</strong></td>
+              <td>
+                {{ item.patient_name }}
+                {% if item.is_emergency %}
+                  <br><span class="badge text-bg-danger">Emergency: {{ item.emergency_reason }}</span>
+                {% endif %}
+              </td>
+              <td>{{ item.age }}</td>
+              <td>{{ item.reason }}</td>
+              <td>{{ item.waiting_text }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="text-muted">
+                Nobody is waiting right now. New patients will appear here automatically.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <script>
+      (function () {
+        const dataUrl = "{% url 'queueing:doctor_live_queue_data' %}";
+        const body = document.getElementById("cq-queue-body");
+        const updatedEl = document.getElementById("cq-queue-updated");
+
+        function addCell(row, value, className) {
+          const cell = document.createElement("td");
+          cell.textContent = value === null || value === undefined ? "" : String(value);
+          if (className) { cell.className = className; }
+          row.appendChild(cell);
+          return cell;
+        }
+
+        function renderQueue(entries) {
+          body.replaceChildren();
+          if (entries.length === 0) {
+            const row = document.createElement("tr");
+            const cell = addCell(row, "Nobody is waiting right now. New patients will appear here automatically.");
+            cell.colSpan = 6;
+            cell.className = "text-muted";
+            body.appendChild(row);
+            return;
+          }
+          entries.forEach(function (item) {
+            const row = document.createElement("tr");
+            if (item.is_emergency) { row.className = "table-danger"; }
+            addCell(row, item.position);
+            addCell(row, item.token);
+            const patientCell = addCell(row, item.patient_name);
+            if (item.is_emergency) {
+              patientCell.appendChild(document.createElement("br"));
+              const badge = document.createElement("span");
+              badge.className = "badge text-bg-danger";
+              badge.textContent = "Emergency: " + item.emergency_reason;
+              patientCell.appendChild(badge);
+            }
+            addCell(row, item.age);
+            addCell(row, item.reason);
+            addCell(row, item.waiting_text);
+            body.appendChild(row);
+          });
+        }
+
+        async function refreshQueue() {
+          try {
+            const response = await fetch(dataUrl, { headers: { "Accept": "application/json" } });
+            if (!response.ok) { return; }
+            const data = await response.json();
+            renderQueue(data.entries);
+            updatedEl.textContent = data.updated_at;
+          } catch (error) {
+            return;
+          }
+        }
+
+        setInterval(refreshQueue, 3000);
+      })();
+    </script>
+  {% endif %}
+{% endblock %}
