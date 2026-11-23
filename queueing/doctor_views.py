@@ -1,11 +1,16 @@
 """Doctor-facing live queue pages (QUE-06, PERF-03, SEC-01)."""
 
+from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from accounts.models import User
 from accounts.permissions import role_required
 
+from .call_next import call_next_patient
 from .doctor_queue import doctor_queue_snapshot
 
 TEMPLATE_NAME = "queueing/doctor/live_queue.html"
@@ -41,3 +46,23 @@ def live_queue_data(request):
     if doctor is None:
         return JsonResponse({"error": NO_PROFILE_MESSAGE}, status=403)
     return JsonResponse(doctor_queue_snapshot(doctor))
+
+
+@role_required(User.Role.DOCTOR)
+@require_POST
+def call_next(request):
+    """Call the first waiting patient in the logged-in doctor's own queue."""
+    doctor = _doctor_for(request)
+    if doctor is None:
+        messages.error(request, NO_PROFILE_MESSAGE)
+        return redirect(reverse("queueing:doctor_live_queue"))
+    try:
+        entry = call_next_patient(doctor)
+    except ValidationError as error:
+        messages.error(request, str(error))
+    else:
+        messages.success(
+            request,
+            f"Token {entry.token} is now in consultation. Ask the patient to come in.",
+        )
+    return redirect(reverse("queueing:doctor_live_queue"))
