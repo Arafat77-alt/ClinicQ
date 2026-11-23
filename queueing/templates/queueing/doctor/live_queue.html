@@ -3,7 +3,15 @@
 {% block content %}
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <h1 class="h3 mb-0">My live queue</h1>
-    <a class="btn btn-outline-secondary btn-sm" href="{% url 'accounts:home' %}">Back to home</a>
+    <div class="d-flex flex-wrap gap-2">
+      {% if not no_profile %}
+        <form method="post" action="{% url 'queueing:doctor_call_next' %}" class="m-0">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary btn-sm">Call next</button>
+        </form>
+      {% endif %}
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'accounts:home' %}">Back to home</a>
+    </div>
   </div>
   {% if no_profile %}
     <div class="alert alert-warning">{{ message }}</div>
@@ -11,6 +19,19 @@
     <p class="text-muted">
       Patients are shown in calling order. Emergencies are highlighted. This list updates every 3 seconds.
     </p>
+    <div id="cq-current" class="border rounded-3 p-3 mb-3 bg-light">
+      {% if snapshot.current %}
+        <h2 class="h6 mb-1">Now with doctor</h2>
+        <div>
+          <strong>{{ snapshot.current.token }}</strong> &mdash;
+          {{ snapshot.current.patient_name }} ({{ snapshot.current.age }}) &middot;
+          {{ snapshot.current.reason }} &middot;
+          {{ snapshot.current.state_display }}{% if snapshot.current.started_text %} since {{ snapshot.current.started_text }}{% endif %}
+        </div>
+      {% else %}
+        <p class="text-muted mb-0">Nobody is in consultation. Click "Call next" to start.</p>
+      {% endif %}
+    </div>
     <div class="small text-muted mb-2">
       Last updated: <span id="cq-queue-updated">{{ snapshot.updated_at }}</span>
     </div>
@@ -55,6 +76,7 @@
       (function () {
         const dataUrl = "{% url 'queueing:doctor_live_queue_data' %}";
         const body = document.getElementById("cq-queue-body");
+        const currentEl = document.getElementById("cq-current");
         const updatedEl = document.getElementById("cq-queue-updated");
 
         function addCell(row, value, className) {
@@ -63,6 +85,26 @@
           if (className) { cell.className = className; }
           row.appendChild(cell);
           return cell;
+        }
+
+        function renderCurrent(current) {
+          currentEl.replaceChildren();
+          if (!current) {
+            const empty = document.createElement("p");
+            empty.className = "text-muted mb-0";
+            empty.textContent = "Nobody is in consultation. Click \"Call next\" to start.";
+            currentEl.appendChild(empty);
+            return;
+          }
+          const heading = document.createElement("h2");
+          heading.className = "h6 mb-1";
+          heading.textContent = "Now with doctor";
+          const detail = document.createElement("div");
+          detail.textContent = current.token + " — " + current.patient_name + " (" + current.age + ") · "
+            + current.reason + " · " + current.state_display
+            + (current.started_text ? " since " + current.started_text : "");
+          currentEl.appendChild(heading);
+          currentEl.appendChild(detail);
         }
 
         function renderQueue(entries) {
@@ -100,6 +142,7 @@
             const response = await fetch(dataUrl, { headers: { "Accept": "application/json" } });
             if (!response.ok) { return; }
             const data = await response.json();
+            renderCurrent(data.current);
             renderQueue(data.entries);
             updatedEl.textContent = data.updated_at;
           } catch (error) {
