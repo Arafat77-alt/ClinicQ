@@ -40,4 +40,18 @@
       <a class="btn btn-outline-secondary" href="{% url 'booking:doctor_detail' doctor.pk %}">Choose another time</a>
     </div>
   </form>
+  {% if form.errors and days %}
+    <hr class="my-4">
+    <h2 class="h6 mb-3">Nearby free times for Dr. {{ doctor.user.get_full_name|default:doctor.user.username }}</h2>
+    {% for day, slots in days|slice:":3" %}
+      <div class="mb-2">
+        <strong class="small">{{ day|date:"l, j F" }}</strong>
+        <div class="d-flex flex-wrap gap-2 mt-1">
+          {% for slot in slots %}
+            <a class="btn btn-outline-primary btn-sm" href="{% url 'booking:book_slot' doctor.pk %}?slot={{ slot.0.isoformat|urlencode }}">{{ slot.0|time:"H:i" }}</a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
 {% endblock %}

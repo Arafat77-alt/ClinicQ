@@ -278,3 +278,37 @@ class PatientBookingTests(TestCase):
         )
         with self.assertRaises(ValidationError):
             cancel_patient_appointment(self.patient, stranger_appt.pk, now=SUNDAY_MORNING)
+
+    def test_patient_cannot_cancel_another_patients_appointment(self):
+        """BKG-05 + SEC-01: patient cannot cancel an appointment outside their family."""
+        stranger = Patient.objects.create(
+            full_name="Other Patient",
+            mobile_number="+8801833333333",
+        )
+        stranger_appt = Appointment.objects.create(
+            patient=stranger,
+            doctor=self.doctor,
+            slot_start=MONDAY_515PM,
+            slot_end=MONDAY_515PM + timedelta(minutes=15),
+            type=Appointment.Type.ONLINE,
+            status=Appointment.Status.BOOKED,
+        )
+        with self.assertRaises(ValidationError):
+            cancel_patient_appointment(self.patient, stranger_appt.pk, now=SUNDAY_MORNING)
+
+    def test_patient_can_cancel_needs_rescheduling_even_within_2_hours(self):
+        """BKG-05: clinic-triggered needs_rescheduling can be cancelled < 2h before start."""
+        appt = Appointment.objects.create(
+            patient=self.patient,
+            doctor=self.doctor,
+            slot_start=MONDAY_5PM,
+            slot_end=MONDAY_515PM,
+            type=Appointment.Type.ONLINE,
+            status=Appointment.Status.NEEDS_RESCHEDULING,
+        )
+        cancelled = cancel_patient_appointment(
+            self.patient,
+            appt.pk,
+            now=MONDAY_5PM - timedelta(minutes=30),
+        )
+        self.assertEqual(cancelled.status, Appointment.Status.CANCELLED)        
