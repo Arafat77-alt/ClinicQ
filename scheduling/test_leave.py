@@ -51,9 +51,7 @@ class LeaveTestCase(TestCase):
         self.rahima = Patient.objects.create(
             full_name="Rahima Akter", mobile_number="+8801712345678"
         )
-        self.karim = Patient.objects.create(
-            full_name="Karim Uddin", mobile_number="+8801812345678"
-        )
+        self.karim = Patient.objects.create(full_name="Karim Uddin", mobile_number="+8801812345678")
 
     def clock(self):
         """Pretend that it is Sunday morning, 15 November 2026."""
@@ -105,8 +103,7 @@ class LeaveSlotTests(LeaveTestCase):
             add_leave(*add_leave_args)
             patient_days = [str(day) for day, _ in free_slots(self.doctor, now=SUNDAY_MORNING)]
             reception_days = [
-                str(day)
-                for day, _ in free_slots(self.doctor, now=SUNDAY_MORNING, reception=True)
+                str(day) for day, _ in free_slots(self.doctor, now=SUNDAY_MORNING, reception=True)
             ]
         self.assertNotIn("2026-11-16", patient_days)
         self.assertNotIn("2026-11-17", patient_days)

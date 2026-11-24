@@ -15,9 +15,7 @@ MAX_FAILED_LOGINS = 5
 LOCK_MINUTES = 15
 
 
-def create_staff_account(
-    username, email, role, temporary_password, first_name="", last_name=""
-):
+def create_staff_account(username, email, role, temporary_password, first_name="", last_name=""):
     """Create a staff account that must change its password at first login.
 
     Implements AUTH-05. The password rules come from SEC-02 (at least 8

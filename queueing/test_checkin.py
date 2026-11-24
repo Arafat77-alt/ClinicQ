@@ -135,14 +135,10 @@ class CheckInPageTests(CheckInTestCase):
         search_url = reverse("reception_queue:check_in")
         response = self.client.post(search_url, {"query": self.appointment.reference_number})
         self.assertContains(response, self.patient.full_name)
-        check_in_url = reverse(
-            "reception_queue:check_in_appointment", args=[self.appointment.pk]
-        )
+        check_in_url = reverse("reception_queue:check_in_appointment", args=[self.appointment.pk])
         response = self.client.post(check_in_url)
         entry = QueueEntry.objects.get()
-        self.assertRedirects(
-            response, reverse("reception_queue:check_in_done", args=[entry.pk])
-        )
+        self.assertRedirects(response, reverse("reception_queue:check_in_done", args=[entry.pk]))
         self.assertContains(self.client.get(response.url), entry.token)
 
     def test_no_show_page_offers_walk_in_registration(self):

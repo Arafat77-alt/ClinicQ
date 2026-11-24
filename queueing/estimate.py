@@ -22,7 +22,10 @@ def round_to_nearest_five(minutes):
     """
     if minutes <= 0:
         return 0
-    return int((minutes + (ROUNDING_STEP_MINUTES / 2)) // ROUNDING_STEP_MINUTES) * ROUNDING_STEP_MINUTES
+    return (
+        int((minutes + (ROUNDING_STEP_MINUTES / 2)) // ROUNDING_STEP_MINUTES)
+        * ROUNDING_STEP_MINUTES
+    )
 
 
 def average_consultation_minutes(

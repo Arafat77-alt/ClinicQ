@@ -1,4 +1,4 @@
-﻿"""One-time password (OTP) rules.
+"""One-time password (OTP) rules.
 
 Story: AUTH-01, AUTH-02. Requirement: SEC-04.
 These are plain functions with no database. The caller stores the code, the time it was
@@ -145,7 +145,5 @@ def get_result_message(result):
         ValueError: If the result is not one of the known results.
     """
     if result not in _MESSAGES:
-        raise ValueError(
-            "This result is not known. Please use a value returned by check_otp."
-        )
+        raise ValueError("This result is not known. Please use a value returned by check_otp.")
     return _MESSAGES[result]

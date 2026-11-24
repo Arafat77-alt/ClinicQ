@@ -1,4 +1,4 @@
-﻿"""Business rules for the accounts application."""
+"""Business rules for the accounts application."""
 
 from ._staff import (
     LOCK_MINUTES,

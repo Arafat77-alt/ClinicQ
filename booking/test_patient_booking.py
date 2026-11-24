@@ -89,10 +89,11 @@ class PatientBookingTests(TestCase):
     def test_anonymous_visitor_is_redirected_to_patient_login_when_booking(self):
         """BKG-03 + SEC-01: unauthenticated visitors cannot confirm a booking."""
         url = reverse("booking:book_slot", args=[self.doctor.pk])
+        encoded_slot = MONDAY_5PM.isoformat().replace(":", "%3A").replace("+", "%2B")
         resp = self.client.get(f"{url}?slot={MONDAY_5PM.isoformat()}")
         self.assertRedirects(
             resp,
-            f"{reverse('accounts:patient_login')}?next={url}%3Fslot%3D{MONDAY_5PM.isoformat().replace(':', '%3A').replace('+', '%2B')}",
+            f"{reverse('accounts:patient_login')}?next={url}%3Fslot%3D{encoded_slot}",
             fetch_redirect_response=False,
         )
 
@@ -110,9 +111,7 @@ class PatientBookingTests(TestCase):
                 },
             )
         appointment = Appointment.objects.get()
-        self.assertRedirects(
-            resp, reverse("booking:booking_confirmation", args=[appointment.pk])
-        )
+        self.assertRedirects(resp, reverse("booking:booking_confirmation", args=[appointment.pk]))
         self.assertEqual(appointment.type, Appointment.Type.ONLINE)
         self.assertEqual(appointment.status, Appointment.Status.BOOKED)
         self.assertEqual(appointment.patient, self.patient)
@@ -262,7 +261,7 @@ class PatientBookingTests(TestCase):
         appt.refresh_from_db()
         self.assertEqual(appt.status, Appointment.Status.BOOKED)
 
-    def test_patient_cannot_cancel_another_patients_appointment(self):
+    def test_patient_cannot_cancel_stranger_appointment_sec01(self):
         """BKG-05 + SEC-02: patient cannot cancel an appointment outside their family."""
         stranger = Patient.objects.create(
             full_name="Other Patient",
@@ -311,4 +310,4 @@ class PatientBookingTests(TestCase):
             appt.pk,
             now=MONDAY_5PM - timedelta(minutes=30),
         )
-        self.assertEqual(cancelled.status, Appointment.Status.CANCELLED)        
+        self.assertEqual(cancelled.status, Appointment.Status.CANCELLED)

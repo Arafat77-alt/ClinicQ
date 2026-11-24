@@ -52,9 +52,7 @@ def call_next_patient(doctor, now=None):
 
         entry = QueueEntry.objects.select_for_update().get(pk=entries[0].pk)
         other_active = (
-            QueueEntry.objects.filter(
-                doctor=doctor, queue_date=queue_date, state__in=ACTIVE_STATES
-            )
+            QueueEntry.objects.filter(doctor=doctor, queue_date=queue_date, state__in=ACTIVE_STATES)
             .exclude(pk=entry.pk)
             .exists()
         )

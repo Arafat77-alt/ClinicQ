@@ -1,8 +1,5 @@
 """Models for the scheduling application."""
 
-from django.conf import settings
-"""Models for the scheduling application."""
-
 from datetime import datetime, time, timedelta
 
 from django.conf import settings
@@ -15,6 +12,7 @@ from django.utils import timezone
 from accounts.models import User
 
 from .services import slot_windows
+
 doctor_code_validator = RegexValidator(
     regex=r"^D\d{1,3}$",
     message="Enter a doctor code that starts with D followed by a number, for example D2.",
@@ -134,8 +132,7 @@ class ScheduleRule(models.Model):
             return
         if self.end_time <= self.start_time:
             raise ValidationError(
-                "The end time must be after the start time. "
-                "Check both times and try again."
+                "The end time must be after the start time. Check both times and try again."
             )
         if self.slot_minutes:
             length = (self.end_time.hour * 60 + self.end_time.minute) - (
@@ -256,17 +253,12 @@ class DoctorLeave(models.Model):
         """Return the moment the leave ends, as a Dhaka-time datetime."""
         if self.end_time:
             return timezone.make_aware(datetime.combine(self.end_date, self.end_time))
-        return timezone.make_aware(
-            datetime.combine(self.end_date + timedelta(days=1), time.min)
-        )
+        return timezone.make_aware(datetime.combine(self.end_date + timedelta(days=1), time.min))
 
     def __str__(self):
         """Return the period in words, for example 16 Nov 2026 to 18 Nov 2026."""
         if self.start_time:
-            return (
-                f"{self.start_date:%d %b %Y} {self.start_time:%H:%M} to "
-                f"{self.end_time:%H:%M}"
-            )
+            return f"{self.start_date:%d %b %Y} {self.start_time:%H:%M} to {self.end_time:%H:%M}"
         if self.start_date == self.end_date:
             return f"{self.start_date:%d %b %Y}"
-        return f"{self.start_date:%d %b %Y} to {self.end_date:%d %b %Y}"        
+        return f"{self.start_date:%d %b %Y} to {self.end_date:%d %b %Y}"

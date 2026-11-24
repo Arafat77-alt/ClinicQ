@@ -1,5 +1,7 @@
 """Pages for the accounts application."""
+
 import time
+
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -14,7 +16,6 @@ from django.contrib.auth.views import (
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
-from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import (

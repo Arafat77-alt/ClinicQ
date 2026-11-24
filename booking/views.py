@@ -96,9 +96,7 @@ def book_slot(request, doctor_id):
                     request,
                     f"Appointment booked! Reference number: {appointment.reference_number}.",
                 )
-                return redirect(
-                    "booking:booking_confirmation", appointment_id=appointment.pk
-                )
+                return redirect("booking:booking_confirmation", appointment_id=appointment.pk)
         slot_param = request.POST.get("slot_start", "")
     else:
         slot_param = request.GET.get("slot", "")
@@ -110,9 +108,7 @@ def book_slot(request, doctor_id):
     if slot_param:
         try:
             parsed = datetime.fromisoformat(slot_param)
-            selected_slot = (
-                timezone.make_aware(parsed) if timezone.is_naive(parsed) else parsed
-            )
+            selected_slot = timezone.make_aware(parsed) if timezone.is_naive(parsed) else parsed
         except ValueError:
             selected_slot = None
 
@@ -171,7 +167,10 @@ def cancel_appointment(request, appointment_id):
     else:
         messages.success(
             request,
-            f"Appointment {appointment.reference_number} has been cancelled and the time slot is now released.",
+            (
+                f"Appointment {appointment.reference_number} has been cancelled "
+                "and the time slot is now released."
+            ),
         )
     return redirect("booking:my_appointments")
 

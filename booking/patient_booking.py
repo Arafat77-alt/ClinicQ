@@ -186,9 +186,7 @@ def cancel_patient_appointment(guardian_patient, appointment_id, now=None):
         )
 
     if appointment.slot_start is not None and current_time > appointment.slot_start:
-        raise ValidationError(
-            "This appointment time has already passed and cannot be cancelled."
-        )
+        raise ValidationError("This appointment time has already passed and cannot be cancelled.")
 
     if not can_cancel_appointment(appointment, now=current_time):
         raise ValidationError(

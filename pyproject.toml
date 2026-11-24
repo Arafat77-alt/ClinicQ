@@ -9,3 +9,8 @@ ignore = ["D100", "D104", "D105", "D106"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"*/apps.py" = ["D101"]
+"*/test_*.py" = ["D101", "D102"]
+"*/tests.py" = ["D101", "D102"]

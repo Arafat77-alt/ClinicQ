@@ -21,6 +21,7 @@ from .services import (
     is_locked,
 )
 
+
 class PatientMobileNumberTests(TestCase):
     """A-10: a mobile number identifies one patient; dependents share it."""
 
@@ -40,9 +41,7 @@ class PatientMobileNumberTests(TestCase):
 
     def test_patient_cannot_be_their_own_guardian(self):
         """A patient must not be recorded as managing themselves."""
-        patient = Patient.objects.create(
-            full_name="Rahima Akter", mobile_number="+8801712345678"
-        )
+        patient = Patient.objects.create(full_name="Rahima Akter", mobile_number="+8801712345678")
         with self.assertRaises(IntegrityError), transaction.atomic():
             Patient.objects.filter(pk=patient.pk).update(guardian=patient)
 
@@ -210,7 +209,6 @@ class StaffAccountPageTests(TestCase):
         self.assertFalse(self.receptionist.is_active)
 
 
-
 class StaffLoginTests(TestCase):
     """AUTH-06: log in with email and password, and the lock after 5 wrong passwords."""
 
@@ -310,7 +308,6 @@ class StaffLoginTests(TestCase):
         self.assertIn("already used by another account", str(caught.exception))
 
 
-
 class PasswordResetTests(TestCase):
     """AUTH-06: forgotten password reset by an emailed link."""
 
@@ -353,7 +350,9 @@ class PasswordResetTests(TestCase):
         self.assertRedirects(
             response, reverse("accounts:password_reset_complete"), fetch_redirect_response=False
         )
-        self.assertTrue(self.client.login(username="imran@example.com", password="My-own-pass-9137"))
+        self.assertTrue(
+            self.client.login(username="imran@example.com", password="My-own-pass-9137")
+        )
 
     def test_link_stops_working_after_it_is_used(self):
         """AUTH-06 confirmation 2: the link can be used only once."""
