@@ -72,9 +72,7 @@ class DoctorProfilePageTests(TestCase):
 
     def test_duplicate_code_shows_a_plain_words_message(self):
         """USAB-06 and SCH-01: duplicate doctor code explains the problem and fix."""
-        Doctor.objects.create(
-            user=self.doctor_user, code="D2", specialty="General", room="101"
-        )
+        Doctor.objects.create(user=self.doctor_user, code="D2", specialty="General", room="101")
         other_doc_user = User.objects.create_user(
             username="dr_nadia",
             email="nadia@example.com",
@@ -101,9 +99,7 @@ class DoctorProfilePageTests(TestCase):
         doctor = Doctor.objects.create(
             user=self.doctor_user, code="D3", specialty="Neurology", room="301"
         )
-        patient = Patient.objects.create(
-            full_name="Rahima Akter", mobile_number="+8801712345678"
-        )
+        patient = Patient.objects.create(full_name="Rahima Akter", mobile_number="+8801712345678")
         start = (timezone.now() + timedelta(days=1)).replace(minute=0, second=0, microsecond=0)
         Appointment.objects.create(
             patient=patient,

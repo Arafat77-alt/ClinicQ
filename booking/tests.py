@@ -31,9 +31,7 @@ class AppointmentTests(TestCase):
         self.patient_two = Patient.objects.create(
             full_name="Karim Uddin", mobile_number="+8801812345678"
         )
-        self.start = (timezone.now() + timedelta(days=1)).replace(
-            minute=0, second=0, microsecond=0
-        )
+        self.start = (timezone.now() + timedelta(days=1)).replace(minute=0, second=0, microsecond=0)
         self.end = self.start + timedelta(minutes=15)
 
     def book(self, patient, **extra):

@@ -23,10 +23,7 @@ class ClinicLoginForm(AuthenticationForm):
             "The email or password is not correct. "
             "Check both and try again. Passwords are case sensitive."
         ),
-        "inactive": (
-            "This account has been deactivated. "
-            "Please contact the clinic administrator."
-        ),
+        "inactive": ("This account has been deactivated. Please contact the clinic administrator."),
     }
 
     def __init__(self, *args, **kwargs):

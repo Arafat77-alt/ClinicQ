@@ -37,9 +37,7 @@ class DoctorQueueTestCase(TestCase):
         self.on_time = self.make_entry(
             "Rahima Akter", "+8801711000001", 34, "17:00", NOW - timedelta(minutes=10), "Fever"
         )
-        self.later = self.make_entry(
-            "Karim Uddin", "+8801711000002", 52, "17:10", NOW, "Cough"
-        )
+        self.later = self.make_entry("Karim Uddin", "+8801711000002", 52, "17:10", NOW, "Cough")
         self.emergency = self.make_entry(
             "Sumaiya Islam", "+8801711000003", 28, "17:20", NOW, "Chest pain"
         )
@@ -64,9 +62,7 @@ class DoctorQueueTestCase(TestCase):
     def make_entry(self, name, number, age, start_text, check_in, reason, doctor=None):
         """Create a checked-in appointment and return its queue entry."""
         slot_start = datetime.fromisoformat(f"2026-11-16T{start_text}:00+06:00")
-        patient = Patient.objects.create(
-            full_name=name, mobile_number=number, approx_age=age
-        )
+        patient = Patient.objects.create(full_name=name, mobile_number=number, approx_age=age)
         appointment = Appointment.objects.create(
             patient=patient,
             doctor=doctor or self.doctor_one,
@@ -81,9 +77,7 @@ class DoctorQueueTestCase(TestCase):
 
     def expected_tokens(self):
         """Return the calling order from the one existing queue ordering rule."""
-        return [
-            entry.token for entry in waiting_queue(self.doctor_one, timezone.localdate(NOW))
-        ]
+        return [entry.token for entry in waiting_queue(self.doctor_one, timezone.localdate(NOW))]
 
 
 class DoctorQueueSnapshotTests(DoctorQueueTestCase):
@@ -92,9 +86,7 @@ class DoctorQueueSnapshotTests(DoctorQueueTestCase):
     def test_snapshot_reuses_the_existing_calling_order(self):
         """The helper does not create a second queue order."""
         snapshot = doctor_queue_snapshot(self.doctor_one, now=NOW)
-        self.assertEqual(
-            [row["token"] for row in snapshot["entries"]], self.expected_tokens()
-        )
+        self.assertEqual([row["token"] for row in snapshot["entries"]], self.expected_tokens())
 
     def test_snapshot_contains_name_age_reason_waiting_and_emergency(self):
         """QUE-06 shows all the details the doctor asked for."""
@@ -134,9 +126,7 @@ class DoctorQueuePageTests(DoctorQueueTestCase):
         response = self.client.get(self.data_url)
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertEqual(
-            [row["token"] for row in data["entries"]], self.expected_tokens()
-        )
+        self.assertEqual([row["token"] for row in data["entries"]], self.expected_tokens())
         self.assertIn("updated_at", data)
 
     def test_doctor_cannot_see_another_doctors_patients(self):
@@ -144,9 +134,7 @@ class DoctorQueuePageTests(DoctorQueueTestCase):
         page = self.client.get(self.page_url)
         data = self.client.get(self.data_url).json()
         self.assertNotContains(page, "Other Doctor Patient")
-        self.assertNotIn(
-            "Other Doctor Patient", [row["patient_name"] for row in data["entries"]]
-        )
+        self.assertNotIn("Other Doctor Patient", [row["patient_name"] for row in data["entries"]])
         self.assertNotIn(self.other_doctor_entry.token, self.expected_tokens())
 
     def test_receptionist_is_refused_on_page_and_json(self):
@@ -180,9 +168,7 @@ class DoctorQueuePageTests(DoctorQueueTestCase):
         self.client.force_login(no_profile_user)
         page = self.client.get(self.page_url)
         self.assertEqual(page.status_code, 403)
-        self.assertContains(
-            page, "Ask the clinic administrator to create it", status_code=403
-        )
+        self.assertContains(page, "Ask the clinic administrator to create it", status_code=403)
         data = self.client.get(self.data_url)
         self.assertEqual(data.status_code, 403)
         self.assertIn("doctor profile", data.json()["error"])
