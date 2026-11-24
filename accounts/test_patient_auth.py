@@ -110,9 +110,7 @@ class PatientOtpRegistrationTests(TestCase):
         self.assertIn("15 minutes", " ".join(blocked_ctx.exception.messages))
 
         with patch("accounts.services.patient_auth.send_sms"):
-            renewed = request_registration_otp(
-                "+8801712345678", now=now + timedelta(minutes=16)
-            )
+            renewed = request_registration_otp("+8801712345678", now=now + timedelta(minutes=16))
         self.assertEqual(renewed.attempts_used, 0)
 
 

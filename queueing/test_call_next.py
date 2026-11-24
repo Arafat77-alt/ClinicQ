@@ -41,13 +41,9 @@ class CallNextTestCase(TestCase):
         self.normal = self.make_entry(
             "Rahima Akter", "+8801711000001", 34, "17:00", NOW - timedelta(minutes=10)
         )
-        self.emergency = self.make_entry(
-            "Sumaiya Islam", "+8801711000003", 28, "17:20", NOW
-        )
+        self.emergency = self.make_entry("Sumaiya Islam", "+8801711000003", 28, "17:20", NOW)
         flag_emergency(self.emergency, self.doctor_one.user, "chest pain")
-        self.later = self.make_entry(
-            "Karim Uddin", "+8801711000002", 52, "17:10", NOW
-        )
+        self.later = self.make_entry("Karim Uddin", "+8801711000002", 52, "17:10", NOW)
         self.other_doctor_entry = self.make_entry(
             "Other Doctor Patient",
             "+8801711000004",
@@ -67,9 +63,7 @@ class CallNextTestCase(TestCase):
     def make_entry(self, name, number, age, start_text, check_in, doctor=None):
         """Create a checked-in appointment and return its queue entry."""
         slot_start = datetime.fromisoformat(f"2026-11-16T{start_text}:00+06:00")
-        patient = Patient.objects.create(
-            full_name=name, mobile_number=number, approx_age=age
-        )
+        patient = Patient.objects.create(full_name=name, mobile_number=number, approx_age=age)
         appointment = Appointment.objects.create(
             patient=patient,
             doctor=doctor or self.doctor_one,

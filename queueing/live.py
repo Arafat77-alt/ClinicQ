@@ -25,8 +25,7 @@ def recent_consultation_durations(doctor):
             state=QueueEntry.State.COMPLETED,
             started_at__isnull=False,
             completed_at__isnull=False,
-        )
-        .order_by("-completed_at")[:MAX_RECENT_VISITS]
+        ).order_by("-completed_at")[:MAX_RECENT_VISITS]
     )
     entries.reverse()
     return [

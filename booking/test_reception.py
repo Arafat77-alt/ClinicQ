@@ -120,9 +120,7 @@ class BookForPatientTests(ReceptionTestCase):
         slots = [(MONDAY_5PM, MONDAY_5PM + timedelta(minutes=15))]
         with self.clock(SUNDAY_MORNING):
             book_for_patient(self.patient, self.doctor, MONDAY_5PM, self.receptionist)
-            with patch(
-                "booking.reception.free_slots", return_value=[(MONDAY_5PM.date(), slots)]
-            ):
+            with patch("booking.reception.free_slots", return_value=[(MONDAY_5PM.date(), slots)]):
                 with self.assertRaises(ValidationError) as caught:
                     book_for_patient(self.patient, self.doctor, MONDAY_5PM, self.receptionist)
         self.assertIn("Someone else has just booked this time", str(caught.exception))

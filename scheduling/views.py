@@ -30,9 +30,7 @@ def availability(request):
     doctor = _own_doctor(request.user)
     rules = []
     if doctor is not None:
-        rules = sorted(
-            doctor.schedule_rules.prefetch_related("breaks"), key=_saturday_first
-        )
+        rules = sorted(doctor.schedule_rules.prefetch_related("breaks"), key=_saturday_first)
     return render(request, "scheduling/availability.html", {"doctor": doctor, "rules": rules})
 
 
@@ -137,8 +135,7 @@ def _report_leave(request, result):
         names = ", ".join(a.patient.full_name for a in result.failed_notices)
         messages.warning(
             request,
-            f"A text message could not be sent to: {names}. "
-            "Please ask reception to call them.",
+            f"A text message could not be sent to: {names}. Please ask reception to call them.",
         )
 
 

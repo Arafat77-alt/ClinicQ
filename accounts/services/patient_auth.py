@@ -111,7 +111,6 @@ def request_registration_otp(mobile_number, now=None):
     return challenge
 
 
-
 def complete_registration_with_otp(
     full_name, mobile_number, entered_code, date_of_birth=None, now=None
 ):
@@ -145,8 +144,7 @@ def complete_registration_with_otp(
     ).first()
     if challenge is None:
         raise ValidationError(
-            "No registration code was found for this number. "
-            "Please ask for a new code first."
+            "No registration code was found for this number. Please ask for a new code first."
         )
 
     _verify_challenge_code(challenge, entered_code, current_time)
@@ -188,6 +186,7 @@ def complete_registration_with_otp(
 
         challenge.delete()
     return user
+
 
 def request_login_otp(mobile_number, now=None):
     """Send a 6-digit OTP to a registered patient so they can log in (AUTH-02).
@@ -265,9 +264,7 @@ def verify_login_otp(mobile_number, entered_code, now=None):
         purpose=OtpChallenge.Purpose.LOGIN,
     ).first()
     if challenge is None:
-        raise ValidationError(
-            "No login code was found for this number. Please ask for a new code."
-        )
+        raise ValidationError("No login code was found for this number. Please ask for a new code.")
 
     _verify_challenge_code(challenge, entered_code, current_time)
 

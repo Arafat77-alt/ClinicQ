@@ -85,8 +85,7 @@ def check_in_booked_appointment(appointment, now=None):
         )
     if now > no_show_at:
         raise ValidationError(
-            "This appointment is past the no-show time. "
-            "Register the patient as a walk-in instead."
+            "This appointment is past the no-show time. Register the patient as a walk-in instead."
         )
     was_late = now > slot_start + timedelta(minutes=GRACE_MINUTES)
     entry = add_to_queue(appointment, check_in_time=now)

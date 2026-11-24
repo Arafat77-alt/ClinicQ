@@ -1,4 +1,4 @@
-﻿"""Tests for OTP rules (B4, AUTH-01/02, SEC-04)."""
+"""Tests for OTP rules (B4, AUTH-01/02, SEC-04)."""
 
 from datetime import datetime, timedelta, timezone
 
@@ -137,7 +137,9 @@ class CheckOtpTests(SimpleTestCase):
 
     def test_empty_or_none_entered_is_wrong(self):
         self.assertEqual(check_otp("", self.code, self.created_at, 0, self.now), RESULT_WRONG_CODE)
-        self.assertEqual(check_otp(None, self.code, self.created_at, 0, self.now), RESULT_WRONG_CODE)
+        self.assertEqual(
+            check_otp(None, self.code, self.created_at, 0, self.now), RESULT_WRONG_CODE
+        )
 
 
 class GetResultMessageTests(SimpleTestCase):

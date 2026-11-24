@@ -1,6 +1,7 @@
 """Tests for the queueing application (BR-05, BR-08, BR-09, BR-10, BR-11, BR-14)."""
 
-from datetime import date, datetime, timedelta, timezone as dt_timezone
+from datetime import date, datetime, timedelta
+from datetime import timezone as dt_timezone
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
@@ -60,13 +61,17 @@ class QueueTestCase(TestCase):
             slot_start=start,
             slot_end=start + timedelta(minutes=15) if start else None,
             type=kind,
-            status=status or (
-                Appointment.Status.CHECKED_IN if kind == Appointment.Type.WALKIN
+            status=status
+            or (
+                Appointment.Status.CHECKED_IN
+                if kind == Appointment.Type.WALKIN
                 else Appointment.Status.BOOKED
             ),
         )
 
-    def make_entry(self, token, state=QueueEntry.State.WAITING, doctor=None, queue_date=MONDAY, **extra):
+    def make_entry(
+        self, token, state=QueueEntry.State.WAITING, doctor=None, queue_date=MONDAY, **extra
+    ):
         """Create a queue entry directly, for tests of constraints and ordering."""
         appointment = self.make_appointment(doctor=doctor)
         values = {

@@ -48,9 +48,7 @@ class Appointment(models.Model):
         CANCELLED = "cancelled", "Cancelled"
         NO_SHOW = "no_show", "No-show"
 
-    reference_number = models.CharField(
-        max_length=12, unique=True, blank=True, editable=False
-    )
+    reference_number = models.CharField(max_length=12, unique=True, blank=True, editable=False)
     patient = models.ForeignKey(
         "accounts.Patient", on_delete=models.PROTECT, related_name="appointments"
     )
