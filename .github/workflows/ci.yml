@@ -9,6 +9,7 @@ on:
 jobs:
   test-and-lint:
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -25,3 +26,9 @@ jobs:
 
       - name: Run Ruff tidy-code checker (MAIN-03)
         run: ruff check .
+
+      - name: Run Django unit and integration tests
+        env:
+          SECRET_KEY: ci-test-secret-key
+          DEBUG: "True"
+        run: python manage.py test
