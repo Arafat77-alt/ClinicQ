@@ -2,11 +2,13 @@
 
 from django.urls import path
 
-from . import doctor_views, live_views
+from . import display_views, doctor_views, live_views
 
 app_name = "queueing"
 
 urlpatterns = [
+    path("display/", display_views.public_display, name="public_display"),
+    path("display/data/", display_views.public_display_data, name="public_display_data"),
     path("doctor/live/", doctor_views.live_queue, name="doctor_live_queue"),
     path("doctor/live/data/", doctor_views.live_queue_data, name="doctor_live_queue_data"),
     path("doctor/live/call-next/", doctor_views.call_next, name="doctor_call_next"),
