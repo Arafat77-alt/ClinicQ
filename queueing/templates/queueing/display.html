@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Now serving - ClinicQ{% endblock %}
+{% block content %}
+  <style>
+    nav.cq-navbar { display: none; }
+    main { max-width: 1600px !important; }
+    .cq-display-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+    .cq-display-card {
+      border: 2px solid var(--cq-primary);
+      border-radius: 1rem;
+      padding: 1.25rem;
+    }
+    .cq-display-token {
+      font-size: clamp(2.75rem, 6vw, 5rem);
+      line-height: 1.05;
+      font-weight: 700;
+      color: var(--cq-primary-dark);
+    }
+    .cq-display-meta { font-size: 1.1rem; color: #5b6b6a; }
+    .cq-display-next { font-size: 1.25rem; letter-spacing: 0.05em; }
+  </style>
+
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <div>
+      <h1 class="display-5 fw-bold mb-0">Now serving</h1>
+      <div class="fs-5 text-muted">{{ display.date }}</div>
+    </div>
+    <div class="text-end">
+      <div class="fs-5">Updated <span id="cq-updated">{{ display.updated_at }}</span></div>
+      <div class="text-muted">Refreshes every 3 seconds &middot; Token numbers only</div>
+    </div>
+  </div>
+
+  <div id="cq-display-grid" class="cq-display-grid">
+    {% for row in display.doctors %}
+      <section class="cq-display-card" data-code="{{ row.code }}">
+        <h2 class="h3 mb-1">
+          Dr. {{ row.code }}
+          <span class="fs-6 fw-normal text-muted">&middot; Room {{ row.room }}</span>
+        </h2>
+        <div class="text-muted text-uppercase">Now serving</div>
+        <div class="cq-display-token" data-field="token">{% if row.current %}{{ row.current.token }}{% else %}&mdash;{% endif %}</div>
+        <div class="fs-6" data-field="state">{% if row.current %}{{ row.current.state_display }}{% else %}Nobody called yet{% endif %}</div>
+        <hr>
+        <div class="cq-display-meta">Waiting: <strong data-field="count">{{ row.waiting_count }}</strong></div>
+        <div class="cq-display-meta">Next: <span class="cq-display-next" data-field="next">{% if row.next_tokens %}{{ row.next_tokens|join:", " }}{% else %}&mdash;{% endif %}</span></div>
+      </section>
+    {% empty %}
+      <p>There are no active doctors yet.</p>
+    {% endfor %}
+  </div>
+
+  <script>
+    (function () {
+      const dataUrl = "{% url 'queueing:public_display_data' %}";
+      const grid = document.getElementById("cq-display-grid");
+      const updatedEl = document.getElementById("cq-updated");
+
+      function apply(snapshot) {
+        updatedEl.textContent = snapshot.updated_at;
+        const cards = Array.from(grid.querySelectorAll("[data-code]"));
+        snapshot.doctors.forEach(function (row) {
+          const card = cards.find(function (item) { return item.dataset.code === row.code; });
+          if (!card) return;
+          const current = row.current;
+          card.querySelector('[data-field="token"]').textContent = current ? current.token : "\u2014";
+          card.querySelector('[data-field="state"]').textContent = current ? current.state_display : "Nobody called yet";
+          card.querySelector('[data-field="count"]').textContent = String(row.waiting_count);
+          card.querySelector('[data-field="next"]').textContent = row.next_tokens.length ? row.next_tokens.join(", ") : "\u2014";
+        });
+      }
+
+      async function refreshDisplay() {
+        try {
+          const response = await fetch(dataUrl, { headers: { "Accept": "application/json" } });
+          if (response.ok) apply(await response.json());
+        } catch (error) {
+          return;
+        }
+      }
+
+      setInterval(refreshDisplay, 3000);
+    })();
+  </script>
+{% endblock %}
