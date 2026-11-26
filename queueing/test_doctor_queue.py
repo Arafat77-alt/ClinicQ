@@ -13,6 +13,7 @@ from booking.models import Appointment
 from scheduling.models import Doctor
 
 from .doctor_queue import doctor_queue_snapshot
+from .models import QueueEntry
 from .queue_actions import flag_emergency
 from .services import add_to_queue, waiting_queue
 
@@ -172,3 +173,29 @@ class DoctorQueuePageTests(DoctorQueueTestCase):
         data = self.client.get(self.data_url)
         self.assertEqual(data.status_code, 403)
         self.assertIn("doctor profile", data.json()["error"])
+
+
+    def test_doctor_completes_active_patient_from_live_queue(self):
+        """POST to doctor_complete marks the active consultation completed."""
+        self.client.post(reverse("queueing:doctor_call_next"))
+        response = self.client.post(reverse("queueing:doctor_complete"), follow=True)
+        self.assertContains(response, "is now completed")
+        self.emergency.refresh_from_db()
+        self.assertEqual(self.emergency.state, QueueEntry.State.COMPLETED)
+
+    def test_doctor_skips_active_patient_from_live_queue(self):
+        """POST to doctor_skip returns the called patient to waiting."""
+        self.client.post(reverse("queueing:doctor_call_next"))
+        response = self.client.post(reverse("queueing:doctor_skip"), follow=True)
+        self.assertContains(response, "was skipped")
+        self.emergency.refresh_from_db()
+        self.assertEqual(self.emergency.state, QueueEntry.State.WAITING)
+
+    def test_patient_cannot_complete_or_skip_consultation(self):
+        """SEC-01: non-doctors get 403 on doctor_complete and doctor_skip."""
+        patient_user = User.objects.create_user(
+            username="pat_sec_test", password="Strong-pass-123", role=User.Role.PATIENT
+        )
+        self.client.force_login(patient_user)
+        self.assertEqual(self.client.post(reverse("queueing:doctor_complete")).status_code, 403)
+        self.assertEqual(self.client.post(reverse("queueing:doctor_skip")).status_code, 403)
