@@ -18,6 +18,7 @@ def _current_row(entry):
     patient = entry.appointment.patient
     start = entry.started_at or entry.called_at
     return {
+        "entry_id": entry.pk,
         "token": entry.token,
         "patient_name": patient.full_name,
         "age": patient.age if patient.age is not None else "Not given",

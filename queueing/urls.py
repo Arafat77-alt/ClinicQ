@@ -14,4 +14,6 @@ urlpatterns = [
     path("doctor/live/call-next/", doctor_views.call_next, name="doctor_call_next"),
     path("live/<int:appointment_id>/", live_views.live_status, name="live_status"),
     path("live/<int:appointment_id>/data/", live_views.live_status_json, name="live_status_json"),
+    path("doctor/live/complete/", doctor_views.complete_current, name="doctor_complete"),
+    path("doctor/live/skip/", doctor_views.skip_current, name="doctor_skip"),
 ]
