@@ -8,6 +8,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from accounts.models import Patient
+from notifications.services import send_booking_confirmation, send_cancellation_confirmation
 
 from .availability import free_slots
 from .models import Appointment
@@ -78,7 +79,7 @@ def book_online_appointment(
 
     try:
         with transaction.atomic():
-            return Appointment.objects.create(
+            appointment = Appointment.objects.create(
                 patient=target_patient,
                 doctor=doctor,
                 slot_start=slot_start,
@@ -93,6 +94,9 @@ def book_online_appointment(
             "Slot just taken — another patient booked this time a moment ago. "
             "Choose one of the nearby free times below."
         ) from error
+
+    send_booking_confirmation(appointment)
+    return appointment
 
 
 def list_patient_appointments(guardian_patient, now=None):
@@ -196,4 +200,5 @@ def cancel_patient_appointment(guardian_patient, appointment_id, now=None):
 
     appointment.status = Appointment.Status.CANCELLED
     appointment.save(update_fields=["status", "updated_at"])
+    send_cancellation_confirmation(appointment)
     return appointment

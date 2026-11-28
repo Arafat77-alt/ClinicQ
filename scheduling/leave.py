@@ -7,7 +7,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from booking.models import Appointment
-from notifications.services import send_sms
+from notifications.services import send_leave_notice
 
 from .models import DoctorLeave
 
@@ -90,29 +90,7 @@ def add_leave(doctor, start_date, end_date, start_time=None, end_time=None, reas
         for appointment in affected:
             appointment.status = Appointment.Status.NEEDS_RESCHEDULING
             appointment.save()
-    failed = [a for a in affected if not _send_leave_notice(a, leave)]
+    failed = [a for a in affected if not send_leave_notice(a)]
     return LeaveResult(leave, affected, failed)
 
 
-def _send_leave_notice(appointment, leave):
-    """Tell one patient that their appointment needs a new time (NOT-03).
-
-    Args:
-        appointment: The affected appointment.
-        leave: The leave that caused it.
-
-    Returns:
-        True when the message was handed over, False when it could not be sent.
-    """
-    doctor = appointment.doctor
-    name = doctor.user.get_full_name() or doctor.user.username
-    when = timezone.localtime(appointment.slot_start)
-    message = (
-        f"ClinicQ: Dr. {name} will be away on {leave}. Your appointment "
-        f"{appointment.reference_number} on {when:%d %b %Y} at {when:%H:%M} needs a new "
-        "time. Please call the clinic or visit ClinicQ to choose another time."
-    )
-    try:
-        return bool(send_sms(appointment.patient.mobile_number, message))
-    except Exception:  # REL-04: a failed message must never stop the leave
-        return False

@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
+from notifications.services import send_booking_confirmation
+
 from .availability import free_slots
 from .models import Appointment
 
@@ -41,7 +43,7 @@ def book_for_patient(patient, doctor, slot_start, booked_by, reason=""):
         )
     try:
         with transaction.atomic():
-            return Appointment.objects.create(
+            appointment = Appointment.objects.create(
                 patient=patient,
                 doctor=doctor,
                 slot_start=slot_start,
@@ -56,3 +58,6 @@ def book_for_patient(patient, doctor, slot_start, booked_by, reason=""):
             "Someone else has just booked this time. Choose another time; "
             "the nearest free times are shown below."
         ) from error
+
+    send_booking_confirmation(appointment)
+    return appointment
