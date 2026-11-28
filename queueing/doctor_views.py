@@ -60,7 +60,7 @@ def call_next(request):
     try:
         entry = call_next_patient(doctor)
     except ValidationError as error:
-        messages.error(request, str(error))
+        messages.error(request, "; ".join(error.messages))
     else:
         messages.success(
             request,
