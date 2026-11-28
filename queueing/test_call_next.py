@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
+from django.contrib.messages import get_messages
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
@@ -183,6 +184,16 @@ class CallNextPageTests(CallNextTestCase):
             ).count(),
             1,
         )
+
+    def test_call_next_refusal_message_has_no_list_brackets(self):
+        """QUE-07: the refusal is plain text, not a stringified list."""
+        self.client.post(self.call_url)
+        self.client.get(self.page_url)
+        response = self.client.post(self.call_url)
+        refusal = " ".join(str(message) for message in get_messages(response.wsgi_request))
+        self.assertIn("A patient is already in consultation", refusal)
+        self.assertNotIn("[", refusal)
+        self.assertNotIn("]", refusal)
 
     def test_receptionist_is_refused_on_the_call_endpoint(self):
         """SEC-01: only doctors may change the queue."""
