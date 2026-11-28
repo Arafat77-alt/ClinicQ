@@ -2,6 +2,7 @@
 
 import time
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -131,6 +132,8 @@ def patient_register(request):
                 "mobile_number": challenge.mobile_number,
                 "date_of_birth": dob.isoformat() if dob else None,
             }
+            if settings.DEBUG:
+                request.session["demo_otp"] = challenge.code
             messages.success(
                 request,
                 f"We sent a 6-digit verification code to {challenge.mobile_number}.",
@@ -168,6 +171,7 @@ def patient_register_verify(request):
                 form.add_error(None, message)
         else:
             request.session.pop(PENDING_REG_SESSION_KEY, None)
+            request.session.pop("demo_otp", None)
             _sign_in_patient(request, user)
             messages.success(request, "Your patient account is ready and you are logged in.")
             return redirect("accounts:home")
@@ -196,6 +200,8 @@ def patient_login(request):
             request.session[PENDING_LOGIN_SESSION_KEY] = normalize_mobile_number(
                 challenge.mobile_number
             )
+            if settings.DEBUG:
+                request.session["demo_otp"] = challenge.code
             messages.success(
                 request,
                 f"We sent a 6-digit login code to {challenge.mobile_number}.",
@@ -227,6 +233,7 @@ def patient_login_verify(request):
                 form.add_error(None, message)
         else:
             request.session.pop(PENDING_LOGIN_SESSION_KEY, None)
+            request.session.pop("demo_otp", None)
             _sign_in_patient(request, user)
             messages.success(request, "You are now logged in.")
             return redirect("accounts:home")
