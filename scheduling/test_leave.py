@@ -126,7 +126,7 @@ class AddLeaveTests(LeaveTestCase):
         inside = self.book(self.rahima, MONDAY, 17)
         also_inside = self.book(self.karim, TUESDAY, 18)
         outside = self.book(self.rahima, NEXT_MONDAY, 17)
-        with self.clock(), patch("scheduling.leave.send_sms", return_value=True):
+        with self.clock(), patch("notifications.services.send_sms", return_value=True):
             result = add_leave(self.doctor, MONDAY, TUESDAY)
         for appointment in (inside, also_inside, outside):
             appointment.refresh_from_db()
@@ -139,7 +139,7 @@ class AddLeaveTests(LeaveTestCase):
         """Cancelled and completed appointments are left alone."""
         cancelled = self.book(self.rahima, MONDAY, 17, status=Appointment.Status.CANCELLED)
         completed = self.book(self.karim, MONDAY, 18, status=Appointment.Status.COMPLETED)
-        with self.clock(), patch("scheduling.leave.send_sms", return_value=True):
+        with self.clock(), patch("notifications.services.send_sms", return_value=True):
             result = add_leave(self.doctor, MONDAY, MONDAY)
         cancelled.refresh_from_db()
         completed.refresh_from_db()
@@ -151,7 +151,7 @@ class AddLeaveTests(LeaveTestCase):
         """An appointment at 20:00 is not affected by leave from 17:00 to 19:00."""
         inside = self.book(self.rahima, MONDAY, 17, 30)
         later = self.book(self.karim, MONDAY, 20)
-        with self.clock(), patch("scheduling.leave.send_sms", return_value=True):
+        with self.clock(), patch("notifications.services.send_sms", return_value=True):
             add_leave(self.doctor, MONDAY, MONDAY, time(17, 0), time(19, 0))
         inside.refresh_from_db()
         later.refresh_from_db()
@@ -161,7 +161,7 @@ class AddLeaveTests(LeaveTestCase):
     def test_each_affected_patient_gets_a_text_message(self):
         """NOT-03: the message names the doctor, the reference and the old time."""
         appointment = self.book(self.rahima, MONDAY, 17)
-        with self.clock(), patch("scheduling.leave.send_sms", return_value=True) as sender:
+        with self.clock(), patch("notifications.services.send_sms", return_value=True) as sender:
             add_leave(self.doctor, MONDAY, MONDAY)
         sender.assert_called_once()
         number, message = sender.call_args.args
@@ -182,7 +182,7 @@ class AddLeaveTests(LeaveTestCase):
                 raise ConnectionError("provider down")
             return True
 
-        with self.clock(), patch("scheduling.leave.send_sms", side_effect=flaky):
+        with self.clock(), patch("notifications.services.send_sms", side_effect=flaky):
             result = add_leave(self.doctor, MONDAY, MONDAY)
         self.assertTrue(DoctorLeave.objects.filter(pk=result.leave.pk).exists())
         self.assertEqual([a.patient for a in result.failed_notices], [self.rahima])
@@ -260,7 +260,7 @@ class LeavePageTests(LeaveTestCase):
         """SCH-03 confirmation: saved, appointments moved, patients told."""
         self.book(self.rahima, MONDAY, 17)
         self.log_in()
-        with self.clock(), patch("scheduling.leave.send_sms", return_value=True):
+        with self.clock(), patch("notifications.services.send_sms", return_value=True):
             response = self.client.post(reverse("scheduling:leave_list"), self.form_data())
             page = self.client.get(reverse("scheduling:leave_list"))
         self.assertRedirects(
@@ -274,7 +274,7 @@ class LeavePageTests(LeaveTestCase):
         """The doctor is told who could not be messaged."""
         self.book(self.rahima, MONDAY, 17)
         self.log_in()
-        with self.clock(), patch("scheduling.leave.send_sms", side_effect=ConnectionError):
+        with self.clock(), patch("notifications.services.send_sms", side_effect=ConnectionError):
             self.client.post(reverse("scheduling:leave_list"), self.form_data())
             page = self.client.get(reverse("scheduling:leave_list"))
         self.assertContains(page, "could not be sent to: Rahima Akter")
